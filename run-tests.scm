@@ -22,7 +22,7 @@
 
 (define (main)
   (init-rand)
-  (loop-for test in (list test-backgammon-path-1mv) do
+  (loop-for test in (list test-backgammon-path-1mv test-backgammon-path-2mv) do
     (set! *current-test* test)
     (test))
   #t)
