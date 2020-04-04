@@ -1,4 +1,6 @@
 
+(define *verbose* #f)
+
 (define *randstate* #f)
 (define *rands* #f)
 
@@ -17,6 +19,12 @@
         (if errmsg
           (format #t "  error: ~s~%" errmsg))
         (exit))))
+
+(define-syntax LLL
+  (lambda (x)
+    (syntax-case x ()
+      ((_ e ...)
+       #'(if *verbose* (format #t e ...))))))
 
 ; fix: default v should be one
 (define (array-inc! arr pos v)
