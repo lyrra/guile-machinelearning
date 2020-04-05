@@ -1,4 +1,20 @@
 
+; [Vold, eligs, gam, lam]
+(define (make-rl gam lam)
+  (list (make-typed-array 'f32 0. 2) ; Vold
+        ; eligibility traces, 0-1 is index in output-layer
+        (list (make-typed-array 'f32 *unspecified* 40 198) ; mhw-0
+              (make-typed-array 'f32 *unspecified* 40 198) ; mhw-1
+              (make-typed-array 'f32 *unspecified* 2 40))  ; myw-0
+        gam lam))
+
+(define (rl-episode-clear rl)
+  ; initialize eligibily traces to 0
+  (match rl
+    ((Vold eligs gam lam)
+     (loop-for arr in eligs do
+       (array-map! arr (lambda (x) 0.) arr)))))
+
 ; gradient-descent, return weight update in grads
 (define (update-eligibility-traces net eligs)
   (match eligs
@@ -48,3 +64,35 @@
                   (exit)))
                    (array-set! ev (+ e (* g x)) i j)))))))))))))
 
+; Vold is the previous state-value, V(s), and Vnew is the next state-value, V(s')
+(define (run-tderr net Vold reward eligs gam lam terminal-state)
+  (let ((Vnew (net-vyo net))
+        (alpha 0.01)
+        (tderr (make-typed-array 'f32 0. 2))
+        (vxi (net-vxi net)))
+
+    ;---------------------------------------------
+    (cond
+     (terminal-state
+      (sv-! tderr reward Vold)) ; reward - V(s)
+     (else
+      ; tderr <- r + gamma * V(s') - V(s)
+      (svvs*! tderr Vnew gam) ; gamma * V(s')
+      (sv-! tderr tderr Vold) ; gamma * V(s') - V(s)
+      (array-map! tderr (lambda (x r) (+ x r)) tderr reward)))
+
+    ;---------------------------------------------
+    ; update network weights
+    ; delta to update weights: w += alpha * tderr * elig
+    ; where elig contains diminished gradients of network activity
+    ; AEG: alpha * tderr * eligs
+    (update-weights net alpha tderr eligs)
+
+    ;---------------------------------------------
+    ; discount eligibility traces
+    ; update eligibility traces
+    ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
+    ; z <- y*L* + Grad[V(s,w)]
+    (loop-for elig in eligs do
+      (array-map! elig (lambda (e) (* e lam)) elig))
+    (update-eligibility-traces net eligs)))

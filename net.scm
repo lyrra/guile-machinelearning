@@ -9,6 +9,16 @@
     (LLL "loaded network!~%")
     net))
 
+(define (file-write-net file episode wnet bnet)
+  (call-with-output-file file
+    (lambda (p)
+      (format p "(#:episode ~a~%" episode)
+      (format p "(#:wnet~%")
+      (write wnet p)
+      (format p "~%)~%(#:bnet~%")
+      (write bnet p)
+      (format p "))~%"))))
+
 (define (make-net)
   (let ((mhw (rand-m! (make-typed-array 'f32 *unspecified* 40 198)))
         (vhz (rand-v! (make-typed-array 'f32 *unspecified* 40)))
