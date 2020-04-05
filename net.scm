@@ -47,3 +47,32 @@
      (sgemv! 1. myw CblasNoTrans vho 0. vyz)
      (array-sigmoid vyz vyo)
      #f)))
+
+; gradient-descent, return weight update in grads
+(define (update-weights net alpha tderr grads)
+  (match grads
+    ((emhw0 emhw1 emyw0)
+  (match net
+    ((mhw vhz vho myw vyz vyo vxi)
+     ;----------------------------------------
+     (match (array-dimensions myw)
+       ((r c)
+        (do ((i 0 (+ i 1))) ((= i r)) ; i = each output neuron
+          (let ((tde (array-ref tderr i)))
+          (do ((j 0 (+ j 1))) ((= j c)) ; j = each hidden output
+            (let ((w (array-ref myw i j))
+                  (e (array-ref emyw0 i j)))
+              (array-set! myw (+ w (* alpha e tde)) i j)
+              (if (or (> w 10) (< w -10)) ; absurd
+                  (begin
+                   (format #t "absurd weight update> w=~f, e=~f~%" w e)
+                  (exit)))))))))
+     ; propagate gradient backwards to hidden weights
+     (match (array-dimensions mhw)
+       ((r c)
+        (do ((i 0 (+ i 1))) ((= i r)) ; i = each hidden neuron
+          (do ((j 0 (+ j 1))) ((= j c)) ; j = each network-input
+            (let ((w (array-ref mhw i j))
+                  (e (+ (* (array-ref tderr 0) (array-ref emhw0 i j))
+                        (* (array-ref tderr 0) (array-ref emhw0 i j)))))
+              (array-set! mhw (+ w (* alpha e)) i j)))))))))))
