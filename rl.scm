@@ -15,6 +15,12 @@
      (loop-for arr in eligs do
        (array-map! arr (lambda (x) 0.) arr)))))
 
+(define (rl-init-step rl net)
+  (let ((out (net-vyo net)))
+    (match rl
+      ((Vold eligs gam lam)
+       (array-map! Vold (lambda (x) x) out)))))
+
 ; gradient-descent, return weight update in grads
 (define (update-eligibility-traces net eligs)
   (match eligs
