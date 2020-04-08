@@ -65,7 +65,9 @@
                    (array-set! ev (+ e (* g x)) i j)))))))))))))
 
 ; Vold is the previous state-value, V(s), and Vnew is the next state-value, V(s')
-(define (run-tderr net Vold reward eligs gam lam terminal-state)
+(define (run-tderr net reward rl terminal-state)
+  (match rl
+    ((Vold eligs gam lam)
   (let ((Vnew (net-vyo net))
         (alpha 0.01)
         (tderr (make-typed-array 'f32 0. 2))
@@ -95,4 +97,7 @@
     ; z <- y*L* + Grad[V(s,w)]
     (loop-for elig in eligs do
       (array-map! elig (lambda (e) (* e lam)) elig))
-    (update-eligibility-traces net eligs)))
+    (update-eligibility-traces net eligs)
+
+    ; new net-output becomes old in next step
+    (array-map! Vold (lambda (x) x) Vnew)))))
