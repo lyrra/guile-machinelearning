@@ -18,11 +18,12 @@
         (format #t "Test ~a has failed. ~s~%" *current-test* reason)
         (exit))))
 
+(load "t/test-cblas.scm")
 (load "t/test-backgammon-moves.scm")
 
 (define (main)
   (init-rand)
-  (loop-for test in (list
+  (loop-for test in (list test-blas-copy
                           test-backgammon-path-edge
                           test-backgammon-path-1mv test-backgammon-path-2mv
 ) do
