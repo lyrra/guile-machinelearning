@@ -19,7 +19,7 @@
   (let ((out (net-vyo net)))
     (match rl
       ((Vold eligs gam lam)
-       (array-map! Vold (lambda (x) x) out)))))
+       (scopy! out Vold)))))
 
 ; gradient-descent, return weight update in grads
 (define (update-eligibility-traces net eligs)
@@ -106,4 +106,4 @@
     (update-eligibility-traces net eligs)
 
     ; new net-output becomes old in next step
-    (array-map! Vold (lambda (x) x) Vnew)))))
+    (scopy! Vnew Vold)))))
