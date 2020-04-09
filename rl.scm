@@ -38,13 +38,8 @@
                  (let* ((o (array-ref vho j))
                         (w (array-ref myw i j))
                         (e (array-ref emyw0 i j)))
-              (if (or (> (* g o) 10) (< (* g o) -10)) ; absurd
-                  (begin
-                   (format #t "emyw0: absurd elig update> e=~f (~a * ~a)~%" (* g o) g o)
-                  (exit)))
                    (array-set! emyw0 (+ e (* g o)) i j)
                    (array-set! gho (+ (array-ref gho i j) (* g w)) i j)))))))
-
        ; gradient through hidden-ouput sigmoid
        ; FIX: make set-sigmoid-gradient! general enough
        (match (array-dimensions myw)
@@ -68,7 +63,21 @@
                   (begin
                    (format #t "emhw0/1: absurd elig update> e=~f (~a * ~a)~%" (* g x) g x)
                   (exit)))
-                   (array-set! ev (+ e (* g x)) i j)))))))))))))
+                   (array-set! ev (+ e (* g x)) i j)))))))
+       ; check gradients aren't crazy
+       (array-for-each (lambda (g)
+                         (if (or (> g 10) (< g -10)) ; absurd
+                             (begin
+                              (format #t "emyw0: absurd elig update> g=~f~%" g)
+                             (exit))))
+                       go)
+       (array-for-each (lambda (g)
+                         (if (or (> g 10) (< g -10)) ; absurd
+                             (begin
+                               (format #t "emhw0/1: absurd elig update> g=~f~%" g)
+                               (exit))))
+                       gho)
+       ))))))
 
 ; Vold is the previous state-value, V(s), and Vnew is the next state-value, V(s')
 (define (run-tderr net reward rl terminal-state)
