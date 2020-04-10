@@ -72,11 +72,7 @@
           (do ((j 0 (+ j 1))) ((= j c)) ; j = each hidden output
             (let ((w (array-ref myw i j))
                   (e (array-ref emyw0 i j)))
-              (array-set! myw (+ w (* alpha e tde)) i j)
-              (if (or (> w 10) (< w -10)) ; absurd
-                  (begin
-                   (format #t "absurd weight update> w=~f, e=~f~%" w e)
-                  (exit)))))))))
+              (array-set! myw (+ w (* alpha e tde)) i j)))))))
      ; propagate gradient backwards to hidden weights
      (match (array-dimensions mhw)
        ((r c)
@@ -85,4 +81,16 @@
             (let ((w (array-ref mhw i j))
                   (e (+ (* (array-ref tderr 0) (array-ref emhw0 i j))
                         (* (array-ref tderr 0) (array-ref emhw0 i j)))))
-              (array-set! mhw (+ w (* alpha e)) i j)))))))))))
+              (array-set! mhw (+ w (* alpha e)) i j))))))
+     #|
+     (match (array-dimensions myw)
+       ((r c)
+        (do ((j 0 (+ j 1))) ((= j c)) ; j = each hidden output
+          (let ((w (array-ref myw i j))
+                (e (array-ref emyw0 i j)))
+            (if (or (> w 10) (< w -10)) ; absurd
+                (begin
+                 (format #t "absurd weight update> w=~f, e=~f~%" w e)
+                 (exit)))))))
+     |#
+     )))))
