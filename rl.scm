@@ -26,7 +26,8 @@
   (match eligs
     ((emhw0 emhw1 emyw0)
   (match net
-    ((mhw vhz vho myw vyz vyo vxi)
+    (#(mhw vhz vho myw vyz vyo vxi)
+
      (let ((go  (make-typed-array 'f32 0.  2))
            (gho (make-typed-array 'f32 0. 2 40)))
        (set-sigmoid-gradient! go vyz)

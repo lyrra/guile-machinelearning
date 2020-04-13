@@ -5,7 +5,10 @@
       (lambda (p)
         (let ((x (read p)))
           (set! net
-                (car (cdr (if which (caddr x) (cadddr x))))))))
+                (car (cdr (if which (caddr x) (cadddr x)))))
+          ; if net is saved as a list, convert to vector
+          (if (list? net)
+              (set! net (list->array 1 net))))))
     (LLL "loaded network!~%")
     net))
 
@@ -20,17 +23,18 @@
       (format p "))~%"))))
 
 (define (make-net)
-  (let ((mhw (rand-m! (make-typed-array 'f32 *unspecified* 40 198)))
-        (vhz (rand-v! (make-typed-array 'f32 *unspecified* 40)))
-        (vho (rand-v! (make-typed-array 'f32 *unspecified* 40)))
-        (myw (rand-m! (make-typed-array 'f32 *unspecified* 2 40)))
-        (vyz (rand-v! (make-typed-array 'f32 *unspecified* 2)))
-        (vyo (rand-v! (make-typed-array 'f32 *unspecified* 2)))
-        (vxi (make-typed-array 'f32 *unspecified* 198)))
-    (list mhw vhz vho myw vyz vyo vxi)))
+  (let ((net (make-array #f 7)))
+    (array-set! net (rand-m! (make-typed-array 'f32 *unspecified* 40 198)) 0)  ; mhw
+    (array-set! net (rand-v! (make-typed-array 'f32 *unspecified* 40)) 1)  ; vhz
+    (array-set! net (rand-v! (make-typed-array 'f32 *unspecified* 40)) 2)  ; vho
+    (array-set! net (rand-m! (make-typed-array 'f32 *unspecified* 2 40)) 3) ; myw
+    (array-set! net (rand-v! (make-typed-array 'f32 *unspecified* 2)) 4)   ; vyz
+    (array-set! net (rand-v! (make-typed-array 'f32 *unspecified* 2)) 5)   ; vyo
+    (array-set! net (make-typed-array 'f32 *unspecified* 198) 6)           ; vxi
+    net))
 
-(define (net-vyo net) (list-ref net 5))
-(define (net-vxi net) (list-ref net 6))
+(define (net-vyo net) (array-ref net 5))
+(define (net-vxi net) (array-ref net 6))
 
 (define (sigmoid z)
   (/ 1. (+ 1. (exp (- z)))))
@@ -51,7 +55,7 @@
 
 (define (net-run net input)
   (match net
-    ((mhw vhz vho myw vyz vyo vxi)
+    (#(mhw vhz vho myw vyz vyo vxi)
      (sgemv! 1. mhw CblasNoTrans input 0. vhz)
      (array-sigmoid vhz vho)
      (sgemv! 1. myw CblasNoTrans vho 0. vyz)
@@ -63,7 +67,7 @@
   (match grads
     ((emhw0 emhw1 emyw0)
   (match net
-    ((mhw vhz vho myw vyz vyo vxi)
+    (#(mhw vhz vho myw vyz vyo vxi)
      ;----------------------------------------
      (match (array-dimensions myw)
        ((r c)
