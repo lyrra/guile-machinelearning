@@ -1,27 +1,4 @@
 
-(define (file-load-net file which)
-  (let ((net #f))
-    (call-with-input-file file
-      (lambda (p)
-        (let ((x (read p)))
-          (set! net
-                (car (cdr (if which (caddr x) (cadddr x)))))
-          ; if net is saved as a list, convert to vector
-          (if (list? net)
-              (set! net (list->array 1 net))))))
-    (LLL "loaded network!~%")
-    net))
-
-(define (file-write-net file episode wnet bnet)
-  (call-with-output-file file
-    (lambda (p)
-      (format p "(#:episode ~a~%" episode)
-      (format p "(#:wnet~%")
-      (write wnet p)
-      (format p "~%)~%(#:bnet~%")
-      (write bnet p)
-      (format p "))~%"))))
-
 (define (make-net)
   (let ((net (make-array #f 7)))
     (array-set! net (rand-m! (make-typed-array 'f32 *unspecified* 40 198)) 0)  ; mhw
