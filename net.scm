@@ -60,33 +60,17 @@
     ((emhw0 emhw1 emyw0)
   (match net
     (#(mhw vhz vho myw vyz vyo vxi)
-     ;----------------------------------------
+     ; output layer
      (match (array-dimensions myw)
        ((r c)
         (do ((i 0 (+ i 1))) ((= i r)) ; i = each output neuron
-          (let ((tde (array-ref tderr i)))
-          (do ((j 0 (+ j 1))) ((= j c)) ; j = each hidden output
-            (let ((w (array-ref myw i j))
-                  (e (array-ref emyw0 i j)))
-              (array-set! myw (+ w (* alpha e tde)) i j)))))))
-     ; propagate gradient backwards to hidden weights
+          (let ((tde (* alpha (array-ref tderr i))))
+            (saxpy! tde (array-cell-ref emyw0 i) (array-cell-ref myw i))))))
+     ; hidden layer
      (match (array-dimensions mhw)
        ((r c)
         (do ((i 0 (+ i 1))) ((= i r)) ; i = each hidden neuron
-          (do ((j 0 (+ j 1))) ((= j c)) ; j = each network-input
-            (let ((w (array-ref mhw i j))
-                  (e (+ (* (array-ref tderr 0) (array-ref emhw0 i j))
-                        (* (array-ref tderr 1) (array-ref emhw1 i j)))))
-              (array-set! mhw (+ w (* alpha e)) i j))))))
-     #|
-     (match (array-dimensions myw)
-       ((r c)
-        (do ((j 0 (+ j 1))) ((= j c)) ; j = each hidden output
-          (let ((w (array-ref myw i j))
-                (e (array-ref emyw0 i j)))
-            (if (or (> w 10) (< w -10)) ; absurd
-                (begin
-                 (format #t "absurd weight update> w=~f, e=~f~%" w e)
-                 (exit)))))))
-     |#
-     )))))
+          (let ((tde0 (* alpha (array-ref tderr 0)))
+                (tde1 (* alpha (array-ref tderr 1))))
+            (saxpy! tde0 (array-cell-ref emhw0 i) (array-cell-ref mhw i))
+            (saxpy! tde1 (array-cell-ref emhw1 i) (array-cell-ref mhw i)))))))))))
