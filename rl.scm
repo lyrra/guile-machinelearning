@@ -31,17 +31,11 @@
      (let ((go  (make-typed-array 'f32 0.  2))
            (gho (make-typed-array 'f32 0. 2 40)))
        (set-sigmoid-gradient! go vyz)
-       (match (array-dimensions myw)
-         ((r c)
-           (do ((i 0 (+ i 1))) ((= i r)) ; i = each output neuron
-             (let ((g (array-ref go i)))
-               (do ((j 0 (+ j 1))) ((= j c)) ; j = each hidden output
-                 (let* ((o (array-ref vho j))
-                        (w (array-ref myw i j))
-                        (e (array-ref emyw0 i j)))
-                   (array-set! emyw0 (+ e (* g o)) i j)
-                   ;(assert (= (array-ref gho i j) 0))
-                   (array-set! gho (* g w) i j)))))))
+
+       (do ((i 0 (+ i 1))) ((= i 2))
+         (saxpy! (array-ref go i) vho (array-cell-ref emyw0 i))
+         (saxpy! (array-ref go i) (array-cell-ref myw i) (array-cell-ref gho i)))
+
        ; gradient through hidden-ouput sigmoid
        ; FIX: make set-sigmoid-gradient! general enough
        (match (array-dimensions myw)
@@ -51,16 +45,11 @@
             (let ((g (array-ref gho i j))
                   (z (array-ref vhz j)))
               (array-set! gho (* g (sigmoid-grad z)) i j))))))
-       (match (array-dimensions mhw)
-         ((r c)
-           (do ((k 0 (+ k 1))) ((= k 2)) ; i = each output neuron
-             (do ((i 0 (+ i 1))) ((= i r)) ; i = each hidden neuron
-               (do ((j 0 (+ j 1))) ((= j c)) ; j = each network-input
-                 (let* ((g (array-ref gho k i))
-                        (x (array-ref vxi j))
-                        (ev (if (= k 0) emhw0 emhw1))
-                        (e (array-ref ev i j)))
-                   (array-set! ev (+ e (* g x)) i j)))))))
+
+       (do ((k 0 (+ k 1))) ((= k 2))
+         (do ((i 0 (+ i 1))) ((= i 40))
+           (saxpy! (array-ref (array-cell-ref gho k) i) vxi (array-cell-ref (if (= k 0) emhw0 emhw1) i))))
+
        ; check gradients aren't crazy
        (array-for-each (lambda (g)
                          (if (or (> g 10) (< g -10)) ; absurd
