@@ -97,7 +97,7 @@
     ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
     ; z <- y*L* + Grad[V(s,w)]
     (loop-for elig in eligs do
-      (array-map! elig (lambda (e) (* e lam)) elig))
+      (matrix-scale! lam elig))
     (update-eligibility-traces net eligs)
 
     ; new net-output becomes old in next step

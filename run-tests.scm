@@ -25,6 +25,7 @@
 (define (main)
   (init-rand)
   (loop-for test in (list test-blas-copy
+                          test-blas-sscal
                           test-blas-saxpy
                           test-backgammon-bar-pos
                           test-backgammon-path-edge
