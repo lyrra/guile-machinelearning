@@ -13,6 +13,21 @@
 (define (net-vyo net) (array-ref net 5))
 (define (net-vxi net) (array-ref net 6))
 
+(define (net-copy src)
+  (let ((dst (make-net)))
+    (do ((i 0 (+ i 1))) ((>= i 7))
+      (array-map! (array-ref dst i)
+                  (lambda (x) x)
+                  (array-ref src i)))
+    dst))
+
+(define (net-merge! dst src1 src2)
+  (array-for-each (lambda (dv v1 v2)
+                    (array-map! dv (lambda (a b)
+                                     (/ (+ a b) 2))
+                                v1 v2))
+                  dst src1 src2))
+
 (define (sigmoid z)
   (/ 1. (+ 1. (exp (- z)))))
 
