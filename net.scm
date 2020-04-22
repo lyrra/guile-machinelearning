@@ -76,7 +76,7 @@
           (do ((j 0 (+ j 1))) ((= j c)) ; j = each network-input
             (let ((w (array-ref mhw i j))
                   (e (+ (* (array-ref tderr 0) (array-ref emhw0 i j))
-                        (* (array-ref tderr 0) (array-ref emhw0 i j)))))
+                        (* (array-ref tderr 1) (array-ref emhw1 i j)))))
               (array-set! mhw (+ w (* alpha e)) i j))))))
      #|
      (match (array-dimensions myw)

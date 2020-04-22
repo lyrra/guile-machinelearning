@@ -27,6 +27,7 @@
   (loop-for test in (list test-blas-copy
                           test-blas-sscal
                           test-blas-saxpy
+                          test-blas-saxpy-2
                           test-backgammon-bar-pos
                           test-backgammon-path-edge
                           test-backgammon-path-1mv test-backgammon-path-2mv
