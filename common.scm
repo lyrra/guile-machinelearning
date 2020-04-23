@@ -15,10 +15,9 @@
 (define* (assert expr #:optional errmsg)
   (if (not expr)
       (begin
-        (format #t "assert-error!~%")
         (if errmsg
           (format #t "  error: ~s~%" errmsg))
-        (exit))))
+        (error "Fatal error."))))
 
 (define-syntax LLL
   (lambda (x)
