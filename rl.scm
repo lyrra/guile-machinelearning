@@ -3,9 +3,9 @@
 (define (make-rl gam lam)
   (list (make-typed-array 'f32 0. 2) ; Vold
         ; eligibility traces, 0-1 is index in output-layer
-        (list (make-typed-array 'f32 *unspecified* 40 198) ; mhw-0
-              (make-typed-array 'f32 *unspecified* 40 198) ; mhw-1
-              (make-typed-array 'f32 *unspecified* 2 40))  ; myw-0
+        (list (gpu-make-matrix 40 198) ; mhw-0
+              (gpu-make-matrix 40 198) ; mhw-1
+              (gpu-make-matrix  2  40))  ; myw-0
         gam lam))
 
 (define (rl-episode-clear rl)
@@ -13,13 +13,13 @@
   (match rl
     ((Vold eligs gam lam)
      (loop-for arr in eligs do
-       (array-map! arr (lambda (x) 0.) arr)))))
+       (gpu-array-apply arr (lambda (x) 0.))))))
 
 (define (rl-init-step rl net)
   (let ((out (net-vyo net)))
     (match rl
       ((Vold eligs gam lam)
-       (scopy! out Vold)))))
+       (array-scopy! out Vold)))))
 
 ; gradient-descent, return weight update in grads
 (define (update-eligibility-traces net eligs)
@@ -29,26 +29,30 @@
     (#(mhw vhz vho myw vyz vyo vxi)
 
      (let ((go  (make-typed-array 'f32 0.  2))
-           (gho (make-typed-array 'f32 0. 2 40)))
-       (set-sigmoid-gradient! go vyz)
+           (gho (gpu-make-matrix 2 40)))
+       (gpu-array-apply gho (lambda (x) 0.))
+       (gpu-refresh vyz)
+       (set-sigmoid-gradient! go (gpu-array vyz))
 
        (do ((i 0 (+ i 1))) ((= i 2))
-         (saxpy! (array-ref go i) vho (array-cell-ref emyw0 i))
-         (saxpy! (array-ref go i) (array-cell-ref myw i) (array-cell-ref gho i)))
+         (gpu-saxpy! (array-ref go i) vho emyw0 #f i)
+         (gpu-saxpy! (array-ref go i) myw gho   i  i))
 
        ; gradient through hidden-ouput sigmoid
        ; FIX: make set-sigmoid-gradient! general enough
-       (match (array-dimensions myw)
+       (gpu-refresh vhz)
+       (let ((vhza (gpu-array vhz)))
+       (match (gpu-array-dimensions myw)
          ((r c)
           (do ((i 0 (+ i 1))) ((= i r)) ; i = each output neuron
           (do ((j 0 (+ j 1))) ((= j c)) ; j = each hidden output
-            (let ((g (array-ref gho i j))
-                  (z (array-ref vhz j)))
-              (array-set! gho (* g (sigmoid-grad z)) i j))))))
+            (let ((g (array-ref (gpu-array gho) i j))
+                  (z (array-ref vhza j)))
+              (array-set! (gpu-array gho) (* g (sigmoid-grad z)) i j)))))))
 
        (do ((k 0 (+ k 1))) ((= k 2))
          (do ((i 0 (+ i 1))) ((= i 40))
-           (saxpy! (array-ref (array-cell-ref gho k) i) vxi (array-cell-ref (if (= k 0) emhw0 emhw1) i))))
+           (gpu-saxpy! (array-ref (gpu-array gho) k i) vxi (if (= k 0) emhw0 emhw1) #f i)))
 
        ; check gradients aren't crazy
        (array-for-each (lambda (g)
@@ -57,12 +61,12 @@
                               (format #t "emyw0: absurd elig update> g=~f~%" g)
                              (exit))))
                        go)
-       (array-for-each (lambda (g)
+       (gpu-array-for-each (lambda (g)
                          (if (or (> g 10) (< g -10)) ; absurd
                              (begin
                                (format #t "emhw0/1: absurd elig update> g=~f~%" g)
                                (exit))))
-                       gho)
+                       (list gho))
        ))))))
 
 ; Vold is the previous state-value, V(s), and Vnew is the next state-value, V(s')
@@ -97,8 +101,8 @@
     ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
     ; z <- y*L* + Grad[V(s,w)]
     (loop-for elig in eligs do
-      (matrix-scale! lam elig))
+      (gpu-array-apply elig (lambda (x) (* x lam))))
     (update-eligibility-traces net eligs)
 
     ; new net-output becomes old in next step
-    (scopy! Vnew Vold)))))
+    (array-scopy! Vnew Vold)))))
