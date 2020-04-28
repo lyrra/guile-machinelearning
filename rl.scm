@@ -74,7 +74,7 @@
   (match rl
     ((Vold eligs gam lam)
   (let ((Vnew (net-vyo net))
-        (alpha 0.01)
+        (alpha 0.1)
         (tderr (make-typed-array 'f32 0. 2))
         (vxi (net-vxi net)))
 
