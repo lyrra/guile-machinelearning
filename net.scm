@@ -57,13 +57,15 @@
           (drv (gpu-array (array-ref dst i))))
       (array-scopy! srv drv))))
 
-(define (net-merge! dst src1 src2)
-  (array-for-each (lambda (drv vr1 vr2)
-                    (array-map! (gpu-array drv)
-                                (lambda (a b) (/ (+ a b) 2))
-                                (gpu-array vr1) (gpu-array vr2)))
-                  dst src1 src2))
-
+(define (net-merge! dst src1 src2 take-ratio)
+  (let ((keep-ration (- 1 take-ratio)))
+    (array-for-each (lambda (drv vr1 vr2)
+                      (array-map! (gpu-array drv)
+                                  (lambda (a b)
+                                    (+ (* b take-ratio)
+                                       (* a keep-ration)))
+                                  (gpu-array vr1) (gpu-array vr2)))
+                    dst src1 src2)))
 
 (define (net-run net input)
   (match net
