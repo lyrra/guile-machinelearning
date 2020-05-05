@@ -20,7 +20,7 @@
 (define (net-serialize net)
   (let ((net2 (make-array #f 7)))
     (do ((i 0 (+ i 1))) ((>= i 7))
-      (gpu-refresh (array-ref net i))
+      (gpu-refresh-host (array-ref net i))
       (array-set! net2 (gpu-array (array-ref net i)) i))
     net2))
 
@@ -33,11 +33,11 @@
 ; get array's as refreshed host-arrays
 (define (net-vyo net)
   (let ((rv (array-ref net 5)))
-    (gpu-refresh rv)
+    (gpu-refresh-host rv)
     (gpu-array rv)))
 (define (net-vxi net)
   (let ((rv (array-ref net 6)))
-    (gpu-refresh rv)
+    (gpu-refresh-host rv)
     (gpu-array rv)))
 
 (define (net-set-input net input)
