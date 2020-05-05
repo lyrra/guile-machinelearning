@@ -7,6 +7,27 @@
 (load "common-lisp.scm")
 (load "common.scm")
 (load "mat.scm")
+(load "sigmoid.scm")
+(load "gpu.scm")
+
+;;; check if gpu is used
+
+(let ((gpu #f))
+  (do ((args (command-line) (cdr args)))
+      ((eq? args '()))
+    (if (string=? (car args) "--gpu")
+        (set! gpu #t)))
+  (cond
+   (gpu
+    (load "rocm-blas.scm")
+    (init-rocblas)
+    (init-rocblas-thread 0))))
+
+;;; Load ML/RL
+
+(sigmoid-init)
+(load "net.scm")
+(load "rl.scm")
 (load "backgammon.scm")
 (load "td-gammon.scm")
 

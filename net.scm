@@ -64,31 +64,15 @@
                                 (gpu-array vr1) (gpu-array vr2)))
                   dst src1 src2))
 
-(define (sigmoid z)
-  (/ 1. (+ 1. (exp (- z)))))
-
-(define (sigmoid-grad z)
-  (let ((a (sigmoid z)))
-    (* a (- 1 a))))
-
-; Dsigmoid(x) = sigmoid(x) (1 - sigmoid(x))
-(define (array-sigmoid src dst)
-  (gpu-array-map! dst (lambda (z) (sigmoid z))
-                  src))
-
-; calculate gradient GRAD(weight, output)
-(define (set-sigmoid-gradient! grad netz)
-  (array-map! grad (lambda (z) (sigmoid-grad z))
-              netz))
 
 (define (net-run net input)
   (match net
     (#(mhw vhz vho myw vyz vyo vxi)
      (gpu-array-copy vxi input)
      (gpu-sgemv! 1. mhw #f vxi 0. vhz)
-     (array-sigmoid vhz vho)
+     (gpu-array-sigmoid vhz vho)
      (gpu-sgemv! 1. myw #f vho 0. vyz)
-     (array-sigmoid vyz vyo)
+     (gpu-array-sigmoid vyz vyo)
      #f)))
 
 ; gradient-descent, return weight update in grads
