@@ -40,3 +40,7 @@
 (define (svvs*! dst vec sc)
   (array-map! dst (lambda (v) (* v sc))
               vec))
+
+(define (get-opt opts key)
+  (let ((pair (assq key opts)))
+    (if pair (cdr pair) #f)))
