@@ -27,7 +27,6 @@
     ((emhw0 emhw1 emyw0)
   (match net
     (#(mhw vhz vho myw vyz vyo vxi)
-
      (let ((go  (make-typed-array 'f32 0.  2))
            (gho (gpu-make-matrix 2 40)))
        (gpu-array-apply gho (lambda (x) 0.))
@@ -52,22 +51,7 @@
 
        (do ((k 0 (+ k 1))) ((= k 2))
          (do ((i 0 (+ i 1))) ((= i 40))
-           (gpu-saxpy! (array-ref (gpu-array gho) k i) vxi (if (= k 0) emhw0 emhw1) #f i)))
-
-       ; check gradients aren't crazy
-       (array-for-each (lambda (g)
-                         (if (or (> g 10) (< g -10)) ; absurd
-                             (begin
-                              (format #t "emyw0: absurd elig update> g=~f~%" g)
-                             (exit))))
-                       go)
-       (gpu-array-for-each (lambda (g)
-                         (if (or (> g 10) (< g -10)) ; absurd
-                             (begin
-                               (format #t "emhw0/1: absurd elig update> g=~f~%" g)
-                               (exit))))
-                       (list gho))
-       ))))))
+           (gpu-saxpy! (array-ref (gpu-array gho) k i) vxi (if (= k 0) emhw0 emhw1) #f i)))))))))
 
 ; Vold is the previous state-value, V(s), and Vnew is the next state-value, V(s')
 (define (run-tderr net reward rl terminal-state)
@@ -89,20 +73,18 @@
       (array-map! tderr (lambda (x r) (+ x r)) tderr reward)))
 
     ;---------------------------------------------
-    ; update network weights
-    ; delta to update weights: w += alpha * tderr * elig
-    ; where elig contains diminished gradients of network activity
-    ; AEG: alpha * tderr * eligs
-    (update-weights net alpha tderr eligs)
-
-    ;---------------------------------------------
     ; discount eligibility traces
     ; update eligibility traces
     ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
     ; z <- y*L* + Grad[V(s,w)]
     (loop-for elig in eligs do
-      (gpu-array-apply elig (lambda (x) (* x lam))))
+      (gpu-array-apply elig (lambda (x) (* x lam)))) ; FIX, use gpu-sscal!
     (update-eligibility-traces net eligs)
 
+    ;---------------------------------------------
+    ; update network weights (Alpha * Error * Gradient)
+    ; delta to update weights: w += alpha * tderr * elig
+    ; where elig contains diminished gradients of network activity
+    (update-weights net alpha tderr eligs)
     ; new net-output becomes old in next step
     (array-scopy! Vnew Vold)))))
