@@ -1,10 +1,10 @@
 
-(define (make-net)
+(define (make-net numhid)
   (let ((net (make-array #f 7)))
-    (array-set! net (gpu-make-matrix 40 198) 0) ; mhw
-    (array-set! net (gpu-make-vector 40)     1) ; vhz
-    (array-set! net (gpu-make-vector 40)     2) ; vho
-    (array-set! net (gpu-make-matrix 2 40)   3) ; myw
+    (array-set! net (gpu-make-matrix numhid 198) 0) ; mhw
+    (array-set! net (gpu-make-vector numhid)     1) ; vhz
+    (array-set! net (gpu-make-vector numhid)     2) ; vho
+    (array-set! net (gpu-make-matrix 2 numhid)   3) ; myw
     (array-set! net (gpu-make-vector 2)      4) ; vyz
     (array-set! net (gpu-make-vector 2)      5) ; vyo
     (array-set! net (gpu-make-vector 198)    6) ; vxi
@@ -25,7 +25,7 @@
     net2))
 
 (define (net-make-from arrs)
-  (let ((net2 (make-net)))
+  (let ((net2 (make-net (array-length (array-ref arrs 1)))))
     (do ((i 0 (+ i 1))) ((>= i 7))
       (gpu-array-copy (array-ref net2 i) (array-ref arrs i)))
     net2))
@@ -44,7 +44,7 @@
   (gpu-array-copy (array-ref net 6) input))
 
 (define (net-copy src)
-  (let ((dst (make-net)))
+  (let ((dst (make-net (gpu-rows (array-ref src 1)))))
     (do ((i 0 (+ i 1))) ((>= i 7))
       (gpu-array-map! (array-ref dst i)
                       (lambda (x) x)

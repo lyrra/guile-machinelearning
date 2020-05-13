@@ -1,12 +1,13 @@
 
 ; [Vold, eligs, gam, lam]
-(define (make-rl gam lam)
-  (list (make-typed-array 'f32 0. 2) ; Vold
-        ; eligibility traces, 0-1 is index in output-layer
-        (list (gpu-make-matrix 40 198) ; mhw-0
-              (gpu-make-matrix 40 198) ; mhw-1
-              (gpu-make-matrix  2  40))  ; myw-0
-        gam lam))
+(define (make-rl gam lam net)
+  (let ((numhid (gpu-rows (array-ref net 1))))
+    (list (make-typed-array 'f32 0. 2) ; Vold
+          ; eligibility traces, 0-1 is index in output-layer
+          (list (gpu-make-matrix numhid 198) ; mhw-0
+                (gpu-make-matrix numhid 198) ; mhw-1
+                (gpu-make-matrix  2  numhid)) ; myw-0
+          gam lam)))
 
 (define (rl-episode-clear rl)
   ; initialize eligibily traces to 0
@@ -27,8 +28,9 @@
     ((emhw0 emhw1 emyw0)
   (match net
     (#(mhw vhz vho myw vyz vyo vxi)
-     (let ((go  (make-typed-array 'f32 0.  2))
-           (gho (gpu-make-matrix 2 40)))
+     (let* ((numhid (gpu-rows vhz))
+            (go  (make-typed-array 'f32 0.  2))
+            (gho (gpu-make-matrix 2 numhid)))
        (gpu-array-apply gho (lambda (x) 0.))
        (gpu-refresh vyz)
        (set-sigmoid-gradient! go (gpu-array vyz))
@@ -50,7 +52,7 @@
               (array-set! (gpu-array gho) (* g (sigmoid-grad z)) i j)))))))
 
        (do ((k 0 (+ k 1))) ((= k 2))
-         (do ((i 0 (+ i 1))) ((= i 40))
+         (do ((i 0 (+ i 1))) ((= i numhid))
            (gpu-saxpy! (array-ref (gpu-array gho) k i) vxi (if (= k 0) emhw0 emhw1) #f i)))))))))
 
 ; Vold is the previous state-value, V(s), and Vnew is the next state-value, V(s')
