@@ -2,7 +2,7 @@
 ; c      (sgemv! 1. (gpu-array mhw) CblasNoTrans (gpu-array vxi) 0. (gpu-array vhz))
 ; gpu    (gpu-sgemv! 1. mhw #f vxi 0. vhz)
 
-(define (test-gpu-rocm-sigmoid)
+(define-test (test-gpu-rocm-sigmoid)
   (let* ((len (inexact->exact (truncate (+ 2 (* 20 (random-uniform))))))
          (src (gpu-make-vector len))
          (dst (gpu-make-vector len))
@@ -35,7 +35,7 @@
                   dst src)
   dst)
 
-(define (test-gpu-rocm-net)
+(define-test (test-gpu-rocm-net)
   (let* ((hlen 40)
          (ilen 198)
          (test-array (lambda (arv brv)

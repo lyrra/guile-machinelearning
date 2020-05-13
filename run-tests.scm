@@ -57,8 +57,8 @@
                           test-backgammon-path-edge
                           test-backgammon-path-1mv test-backgammon-path-2mv
 ) do
-    (set! *current-test* test)
     (test))
+  (L "tot: ~a, subtests: ~a~%" *test-totrun* *test-totrun-subtest*)
   #t)
 
 (main)

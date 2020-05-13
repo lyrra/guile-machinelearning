@@ -1,5 +1,39 @@
 
+(define *test-verbose* 1) ; increased verbosity
+(define *test-depth* 25)
+
 (define *current-test* #f)
+(define *test-totrun* 0)
+(define *test-totrun-subtest* 0)
+
+(define-syntax L
+  (lambda (x)
+    (syntax-case x ()
+      ((_ 2 e e* ...) #'(if (and *test-verbose* (>= *test-verbose* 2)) (format #t e e* ...)))
+      ((_ e e* ...) #'(if *test-verbose* (format #t e e* ...)))
+      ((_ e ...) #'(if *test-verbose* (format #t e ...))))))
+
+(define-syntax define-test
+  (lambda (x)
+    (syntax-case x ()
+      ((_ (proc) e ...)
+       #'(define (proc)
+           (set! *current-test* (procedure-name proc))
+           (L "-- running test ~a~%" *current-test*)
+           (set! *test-totrun* (1+ *test-totrun*))
+           e ...)))))
+
+(define-syntax loop-subtests
+  (lambda (x)
+    (syntax-case x ()
+      ((_ (i) e ...)
+       #'(begin
+           (do ((i 0 (1+ i)))
+               ((>= i *test-depth*))
+             (set! *test-totrun-subtest* (1+ *test-totrun-subtest*))
+             e ...)
+           (L "  -- test ~a completed ~a subtests~%"
+              *current-test* *test-depth*))))))
 
 (define (test-assert exp . reason)
   (if (not (eq? exp #t))
