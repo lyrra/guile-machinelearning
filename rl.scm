@@ -37,7 +37,10 @@
 
        (do ((i 0 (+ i 1))) ((= i 2))
          (gpu-saxpy! (array-ref go i) vho emyw0 #f i)
-         (gpu-saxpy! (array-ref go i) myw gho   i  i))
+         ;(gpu-saxpy! (array-ref go i) myw gho   i  i)
+         (saxpy! (array-ref go i)
+                 (array-cell-ref (gpu-array myw) i)
+                 (array-cell-ref (gpu-array gho) i)))
 
        ; gradient through hidden-ouput sigmoid
        ; FIX: make set-sigmoid-gradient! general enough
