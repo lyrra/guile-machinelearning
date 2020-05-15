@@ -36,13 +36,23 @@
 (load "t/test-blas.scm")
 (load "t/test-cblas.scm")
 (load "t/test-cblas-blas.scm")
-(load "t/test-rocm-blas.scm")
+(load "t/test-gpu.scm") ; test gpu-abstraction without hardware
+(load "t/test-rocm-blas.scm") ; test gpu-abstraction with hardware
 (load "t/test-gpu-rocm-net.scm")
 (load "t/test-backgammon-moves.scm")
 
+(define (run-test proc)
+  (let ((start (gettimeofday))
+        (stop #f))
+    (proc)
+    (set! stop (gettimeofday))
+    (format #t "    time: ~s~%"
+            (- (+ (* (car  stop) 1000000) (cdr stop))
+               (+ (* (car start) 1000000) (cdr start))))))
+
 (define (main)
   (init-rand)
-  (loop-for test in (list test-blas-copy
+  (loop-for proc in (list test-blas-copy
                           test-blas-sscal
                           test-blas-saxpy
                           test-blas-saxpy-2
@@ -50,6 +60,7 @@
                           test-cblas-blas-saxpy
                           test-rocm-blas-saxpy
                           test-rocm-blas-sgemv
+                          test-gpu-array-copy
                           test-gpu-rocm-sigmoid
                           test-gpu-rocm-net
                           test-backgammon-valid-pos
@@ -57,7 +68,7 @@
                           test-backgammon-path-edge
                           test-backgammon-path-1mv test-backgammon-path-2mv
 ) do
-    (test))
+    (run-test proc))
   (L "tot: ~a, subtests: ~a~%" *test-totrun* *test-totrun-subtest*)
   #t)
 
