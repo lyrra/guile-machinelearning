@@ -83,7 +83,9 @@
     ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
     ; z <- y*L* + Grad[V(s,w)]
     (loop-for elig in eligs do
-      (gpu-array-apply elig (lambda (x) (* x lam)))) ; FIX, use gpu-sscal!
+      (gpu-sscal! lam elig))
+    ;(loop-for elig in eligs do
+    ;  (gpu-array-apply elig (lambda (x) (* x lam)))) ; FIX, use gpu-sscal!
     (update-eligibility-traces net eligs)
 
     ;---------------------------------------------

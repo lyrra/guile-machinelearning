@@ -61,6 +61,7 @@
                           test-rocm-blas-saxpy
                           test-rocm-blas-sgemv
                           test-gpu-array-copy
+                          test-gpu-sscal
                           test-gpu-rocm-sigmoid
                           test-gpu-rocm-net
                           test-backgammon-valid-pos
