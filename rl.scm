@@ -1,3 +1,4 @@
+(define %alpha 0.1)
 
 ; [Vold, eligs, gam, lam]
 (define (make-rl gam lam net)
@@ -63,7 +64,7 @@
   (match rl
     ((Vold eligs gam lam)
   (let ((Vnew (net-vyo net))
-        (alpha 0.1)
+        (alpha %alpha)
         (tderr (make-typed-array 'f32 0. 2))
         (vxi (net-vxi net)))
 
