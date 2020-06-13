@@ -73,10 +73,15 @@
      (terminal-state
       (sv-! tderr reward Vold)) ; reward - V(s)
      (else
+      ;(set! alpha (* alpha 0.1)) ; real reward is worth more (really?)
+      ; neural-network version:
+      (sv-! tderr Vnew Vold)
+      ; table-lookup version:
       ; tderr <- r + gamma * V(s') - V(s)
-      (svvs*! tderr Vnew gam) ; gamma * V(s')
-      (sv-! tderr tderr Vold) ; gamma * V(s') - V(s)
-      (array-map! tderr (lambda (x r) (+ x r)) tderr reward)))
+      ;(svvs*! tderr Vnew gam) ; gamma * V(s')
+      ;(sv-! tderr tderr Vold) ; gamma * V(s') - V(s)
+      ;(array-map! tderr (lambda (x r) (+ x r)) tderr reward))
+      ))
 
     ;---------------------------------------------
     ; discount eligibility traces
@@ -85,8 +90,6 @@
     ; z <- y*L* + Grad[V(s,w)]
     (loop-for elig in eligs do
       (gpu-sscal! lam elig))
-    ;(loop-for elig in eligs do
-    ;  (gpu-array-apply elig (lambda (x) (* x lam)))) ; FIX, use gpu-sscal!
     (update-eligibility-traces net eligs)
 
     ;---------------------------------------------
@@ -94,5 +97,7 @@
     ; delta to update weights: w += alpha * tderr * elig
     ; where elig contains diminished gradients of network activity
     (update-weights net alpha tderr eligs)
+    ;(if terminal-state
+    ;  (update-weights net alpha tderr eligs))
     ; new net-output becomes old in next step
     (array-scopy! Vnew Vold)))))
