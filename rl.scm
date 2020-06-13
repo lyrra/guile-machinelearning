@@ -7,7 +7,7 @@
           ; eligibility traces, 0-1 is index in output-layer
           (list (gpu-make-matrix numhid 198) ; mhw-0
                 (gpu-make-matrix numhid 198) ; mhw-1
-                (gpu-make-matrix  2  numhid)) ; myw-0
+                (gpu-make-matrix 2  numhid)) ; myw-0
           gam lam)))
 
 (define (rl-episode-clear rl)
