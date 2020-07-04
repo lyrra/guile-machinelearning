@@ -25,6 +25,7 @@
 
 ;;; Load ML/RL
 
+(load "softmax.scm")
 (sigmoid-init)
 (load "net.scm")
 (load "rl.scm")
@@ -33,6 +34,7 @@
 
 (load "t/test-common.scm") ; test driver
 ;;; tests
+(load "t/test-softmax.scm")
 (load "t/test-blas.scm")
 (load "t/test-cblas.scm")
 (load "t/test-cblas-blas.scm")
@@ -52,7 +54,8 @@
 
 (define (main)
   (init-rand)
-  (loop-for proc in (list test-blas-copy
+  (loop-for proc in (list test-softmax
+                          test-blas-copy
                           test-blas-sscal
                           test-blas-saxpy
                           test-blas-saxpy-2
