@@ -1,33 +1,35 @@
+(use-modules (ice-9 binary-ports))
 
 (define (file-load-net file)
   (let ((net #f))
     (call-with-input-file file
       (lambda (p)
-        (let ((x (read p)))
-          (match (car x)
-            (#:episode ;old network type
-             (error "old-network, not supported anymore")
-             (set! net
-                   (car (cdr (caddr x))))
-             ; if net is saved as a list, convert to vector
-             (net-make-from
-              (if (list? net)
-                  (list->array 1 net)
-                  net)))
-            ; new network (an alist)
-            (pair
-             (net-make-from (cdr (assq #:wnet x))))))))))
+        (port-read-uint32 p) ; version
+        (port-read-uint32 p) ; episode
+        (let* ((arrlen (port-read-uint32 p))
+               (net (make-array #f arrlen)))
+          (do ((n 0 (1+ n)))
+              ((>= n arrlen))
+            (let ((arr (port-read-array/matrix p)))
+              (array-set! net arr n)))
+          (net-make-from net #f)))
+      #:guess-encoding #f
+      #:encoding #f
+      #:binary #t)))
 
 (define (file-write-net file episode net)
   (call-with-output-file file
     (lambda (p)
-      (format p "((#:episode . ~a)~%" episode)
-      (format p "(#:wnet .~%")
-      (write (net-serialize net) p)
-      (format p "~%)~%")
-      (format p ")~%"))))
+      (port-write-uint32 p 1) ; version
+      (port-write-uint32 p episode)
+      (port-write-uint32 p (array-length net))
+      (array-for-each (lambda (gpu-arr)
+                        (gpu-refresh-host gpu-arr)
+                        (port-write-array/matrix p (gpu-array gpu-arr)))
+                      net))
+    #:encoding #f #:binary #t))
 
-(define (make-net numhid)
+(define* (make-net numhid #:optional (init #t))
   (let ((net (make-array #f 7)))
     (array-set! net (gpu-make-matrix numhid 198) 0) ; mhw
     (array-set! net (gpu-make-vector numhid)     1) ; vhz
@@ -36,9 +38,10 @@
     (array-set! net (gpu-make-vector 2)      4) ; vyz
     (array-set! net (gpu-make-vector 2)      5) ; vyo
     (array-set! net (gpu-make-vector 198)    6) ; vxi
-    (array-for-each (lambda (arr)
-     (gpu-array-apply arr (lambda (x) (* 0.01 (- (random-uniform) .5)))))
-               net)
+    (if init
+      (array-for-each (lambda (arr)
+       (gpu-array-apply arr (lambda (x) (* 0.01 (- (random-uniform) .5)))))
+                 net))
     net))
 
 (define (net-free net)
@@ -52,8 +55,8 @@
       (array-set! net2 (gpu-array (array-ref net i)) i))
     net2))
 
-(define (net-make-from arrs)
-  (let ((net2 (make-net (array-length (array-ref arrs 1)))))
+(define* (net-make-from arrs #:optional (init #t))
+  (let ((net2 (make-net (array-length (array-ref arrs 1)) init)))
     (do ((i 0 (+ i 1))) ((>= i 7))
       (gpu-array-copy (array-ref net2 i) (array-ref arrs i)))
     net2))
