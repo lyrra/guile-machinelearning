@@ -1,36 +1,49 @@
 (define %alpha 0.1)
 
-; [Vold, eligs, gam, lam]
-(define (make-rl gam lam net)
-  (let ((numhid (gpu-rows (array-ref net 1))))
-    (list (make-typed-array 'f32 0. 2) ; Vold
-          ; eligibility traces, 0-1 is index in output-layer
-          (list (gpu-make-matrix numhid 198) ; mhw-0
-                (gpu-make-matrix numhid 198) ; mhw-1
-                (gpu-make-matrix 2  numhid)) ; myw-0
-          gam lam)))
+(define-record-type <rl>
+  (make-rl)
+  rl?
+  (gam rl-gam set-rl-gam!)
+  (lam rl-lam set-rl-lam!)
+  (net rl-net set-rl-net!)
+  (Vold rl-Vold set-rl-Vold!)
+  (eligs rl-eligs set-rl-eligs!))
+
+(define (new-rl gam lam net)
+  (let ((numhid (gpu-rows (array-ref net 1)))
+        (rl (make-rl)))
+    (set-rl-gam! rl gam)
+    (set-rl-lam! rl lam)
+    (set-rl-net! rl net)
+    (set-rl-Vold! rl (make-typed-array 'f32 0. 2)) ; Vold
+    (set-rl-eligs! rl
+                   ; eligibility traces, 0-1 is index in output-layer
+                   (list (gpu-make-matrix numhid 198) ; mhw-0
+                         (gpu-make-matrix numhid 198) ; mhw-1
+                         (gpu-make-matrix 2  numhid))) ; myw-0
+    rl))
 
 (define (rl-episode-clear rl)
   ; initialize eligibily traces to 0
-  (match rl
-    ((Vold eligs gam lam)
-     (loop-for arr in eligs do
-       (gpu-array-apply arr (lambda (x) 0.))))))
+  (loop-for arr in (rl-eligs rl) do
+    (gpu-array-apply arr (lambda (x) 0.))))
 
-(define (rl-init-step rl net)
-  (let ((out (net-vyo net)))
-    (match rl
-      ((Vold eligs gam lam)
-       (array-scopy! out Vold)))))
+(define (rl-init-step rl)
+  (let* ((net (rl-net rl))
+         (out (net-vyo (rl-net rl))))
+    (array-scopy! out (rl-Vold rl))))
 
 ; Vold is the previous state-value, V(s), and Vnew is the next state-value, V(s')
-(define (run-tderr net reward rl terminal-state)
-  (match rl
-    ((Vold eligs gam lam)
-  (let ((Vnew (net-vyo net))
-        (alpha %alpha)
-        (tderr (make-typed-array 'f32 0. 2))
-        (vxi (net-vxi net)))
+(define (run-tderr reward rl terminal-state)
+  (let* ((net (rl-net rl))
+         (Vold (rl-Vold rl))
+         (eligs (rl-eligs rl))
+         (gam (rl-gam rl))
+         (lam (rl-lam rl))
+         (Vnew (net-vyo net))
+         (alpha %alpha)
+         (tderr (make-typed-array 'f32 0. 2))
+         (vxi (net-vxi net)))
 
     ;---------------------------------------------
     (cond
@@ -64,7 +77,7 @@
     ;(if terminal-state
     ;  (update-weights net alpha tderr eligs))
     ; new net-output becomes old in next step
-    (array-scopy! Vnew Vold)))))
+    (array-scopy! Vnew Vold)))
 
 (define (rl-policy-greedy-action agent cur-state fea-states)
   (let* ((net agent)
