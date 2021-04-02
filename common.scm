@@ -2,15 +2,17 @@
 (define *verbose* #f)
 
 (define *randstate* #f)
-(define *rands* #f)
 
-(define (init-rand)
-  (set! *rands* (seed->random-state (current-time)))
-  (set! *randstate* (seed->random-state (current-time)))
+(define* (init-rand #:optional seed)
+  (set! *randstate*
+        (seed->random-state (or seed (current-time))))
   #f)
 
 (define (random-uniform)
   (random:uniform *randstate*))
+
+(define (random-number len)
+  (random len *randstate*))
 
 (define* (assert expr #:optional errmsg)
   (if (not expr)
