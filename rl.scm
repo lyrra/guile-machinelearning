@@ -65,3 +65,27 @@
     ;  (update-weights net alpha tderr eligs))
     ; new net-output becomes old in next step
     (array-scopy! Vnew Vold)))))
+
+(define (rl-policy-greedy-action agent cur-state fea-states)
+  (let* ((net agent)
+         (bvxi (make-typed-array 'f32 *unspecified* 198))
+         (vxi (net-vxi net)) ; lend networks-input array
+         (points -999)
+         (best-state #f))
+    (loop-for state in fea-states do
+      (set-bg-input state vxi)
+      (net-run net vxi)
+      (let ((out (net-vyo net)))
+        ; FIX: should we consider white(idx-0) > black(idx-1) ?
+        (when (> (- (array-ref out 0) (array-ref out 1)) points)
+          ; keep best-scored
+          ;(LLL "  best-net-out: ~s~%" out)
+          (set! points (- (array-ref out 0) (array-ref out 1)))
+          (set! best-state state)
+          (array-scopy! vxi bvxi))))
+    (if best-state ; if path found, ie didn't terminate
+        (begin ; restore best-input to network (ie we keep this future)
+          (net-set-input net bvxi)
+          best-state)
+        ; got terminal-state
+        #f)))
