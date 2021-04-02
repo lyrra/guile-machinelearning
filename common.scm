@@ -44,3 +44,8 @@
 (define (get-opt opts key)
   (let ((pair (assq key opts)))
     (if pair (cdr pair) #f)))
+
+(define (indent x)
+  (do ((i 0 (1+ i)))
+      ((>= i x))
+    (format #t " ")))

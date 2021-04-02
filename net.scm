@@ -1,4 +1,32 @@
 
+(define (file-load-net file)
+  (let ((net #f))
+    (call-with-input-file file
+      (lambda (p)
+        (let ((x (read p)))
+          (match (car x)
+            (#:episode ;old network type
+             (error "old-network, not supported anymore")
+             (set! net
+                   (car (cdr (caddr x))))
+             ; if net is saved as a list, convert to vector
+             (net-make-from
+              (if (list? net)
+                  (list->array 1 net)
+                  net)))
+            ; new network (an alist)
+            (pair
+             (net-make-from (cdr (assq #:wnet x))))))))))
+
+(define (file-write-net file episode net)
+  (call-with-output-file file
+    (lambda (p)
+      (format p "((#:episode . ~a)~%" episode)
+      (format p "(#:wnet .~%")
+      (write (net-serialize net) p)
+      (format p "~%)~%")
+      (format p ")~%"))))
+
 (define (make-net numhid)
   (let ((net (make-array #f 7)))
     (array-set! net (gpu-make-matrix numhid 198) 0) ; mhw
@@ -97,3 +125,39 @@
                 (tde1 (* alpha (array-ref tderr 1))))
             (gpu-saxpy! tde0 emhw0 mhw i i)
             (gpu-saxpy! tde1 emhw1 mhw i i))))))))))
+
+; gradient-descent, return weight update in grads
+(define (update-eligibility-traces net eligs)
+  (match eligs
+    ((emhw0 emhw1 emyw0)
+  (match net
+    (#(mhw vhz vho myw vyz vyo vxi)
+     (let* ((numhid (gpu-rows vhz))
+            (go  (make-typed-array 'f32 0.  2))
+            (gho (gpu-make-matrix 2 numhid)))
+       (gpu-array-apply gho (lambda (x) 0.))
+       (gpu-refresh vyz)
+       (set-sigmoid-gradient! go (gpu-array vyz))
+
+       (do ((i 0 (+ i 1))) ((= i 2))
+         (gpu-saxpy! (array-ref go i) vho emyw0 #f i)
+         ;(gpu-saxpy! (array-ref go i) myw gho   i  i)
+         (saxpy! (array-ref go i)
+                 (array-cell-ref (gpu-array myw) i)
+                 (array-cell-ref (gpu-array gho) i)))
+
+       ; gradient through hidden-ouput sigmoid
+       ; FIX: make set-sigmoid-gradient! general enough
+       (gpu-refresh vhz)
+       (let ((vhza (gpu-array vhz)))
+       (match (gpu-array-dimensions myw)
+         ((r c)
+          (do ((i 0 (+ i 1))) ((= i r)) ; i = each output neuron
+          (do ((j 0 (+ j 1))) ((= j c)) ; j = each hidden output
+            (let ((g (array-ref (gpu-array gho) i j))
+                  (z (array-ref vhza j)))
+              (array-set! (gpu-array gho) (* g (sigmoid-grad z)) i j)))))))
+
+       (do ((k 0 (+ k 1))) ((= k 2))
+         (do ((i 0 (+ i 1))) ((= i numhid))
+           (gpu-saxpy! (array-ref (gpu-array gho) k i) vxi (if (= k 0) emhw0 emhw1) #f i)))))))))
