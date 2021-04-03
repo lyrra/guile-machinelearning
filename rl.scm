@@ -102,3 +102,21 @@
           best-state)
         ; got terminal-state
         #f)))
+
+(define (run-ml-learn bg rl reward)
+  (let ((net (rl-net rl)))
+    ; need to rerun network to get fresh output at each layer
+    ; needed by backprop
+    (net-run net (or (net-vxi net))) ; uses the best-path as input
+    (match reward
+      ((reward terminal-state)
+       ; sane state
+       (let ((rewarr (make-typed-array 'f32 0. 2)))
+         (cond
+          ((>= reward 0)
+           (array-set! rewarr 1. 0)
+           (array-set! rewarr 0. 1))
+          ((< reward 0)
+           (array-set! rewarr 0. 0)
+           (array-set! rewarr 1. 1)))
+         (run-tderr rewarr rl terminal-state))))))
