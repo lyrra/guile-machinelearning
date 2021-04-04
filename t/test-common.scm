@@ -70,3 +70,19 @@
                      (test-assert (epsilon? a b epsilon)
                                   (format #f "i:~a[~f,~f]" i a b)))))))
             arrs brrs))
+
+(define (run-test proc)
+  (let ((start (gettimeofday))
+        (stop #f))
+    (proc)
+    (set! stop (gettimeofday))
+    (format #t "    time: ~s~%"
+            (- (+ (* (car  stop) 1000000) (cdr stop))
+               (+ (* (car start) 1000000) (cdr start))))))
+
+(define (run-tests test-list)
+  (init-rand)
+  (loop-for proc in test-list do
+    (run-test (primitive-eval proc)))
+  (L "tot: ~a, subtests: ~a~%" *test-totrun* *test-totrun-subtest*)
+  #t)

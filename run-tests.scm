@@ -29,6 +29,7 @@
 (sigmoid-init)
 (load "net.scm")
 (load "rl.scm")
+(load "agent.scm")
 (load "backgammon.scm")
 (load "td-gammon.scm")
 
@@ -43,37 +44,22 @@
 (load "t/test-gpu-rocm-net.scm")
 (load "t/test-backgammon-moves.scm")
 
-(define (run-test proc)
-  (let ((start (gettimeofday))
-        (stop #f))
-    (proc)
-    (set! stop (gettimeofday))
-    (format #t "    time: ~s~%"
-            (- (+ (* (car  stop) 1000000) (cdr stop))
-               (+ (* (car start) 1000000) (cdr start))))))
-
-(define (main)
+(begin
   (init-rand)
-  (loop-for proc in (list test-softmax
-                          test-blas-copy
-                          test-blas-sscal
-                          test-blas-saxpy
-                          test-blas-saxpy-2
-                          test-cblas-blas-sgemv
-                          test-cblas-blas-saxpy
-                          test-rocm-blas-saxpy
-                          test-rocm-blas-sgemv
-                          test-gpu-array-copy
-                          test-gpu-sscal
-                          test-gpu-rocm-sigmoid
-                          test-gpu-rocm-net
-                          test-backgammon-valid-pos
-                          test-backgammon-bar-pos
-                          test-backgammon-path-edge
-                          test-backgammon-path-1mv test-backgammon-path-2mv
-) do
-    (run-test proc))
-  (L "tot: ~a, subtests: ~a~%" *test-totrun* *test-totrun-subtest*)
-  #t)
-
-(main)
+  (run-tests '(test-softmax
+               test-blas-copy
+               test-blas-sscal
+               test-blas-saxpy
+               test-blas-saxpy-2
+               test-cblas-blas-sgemv
+               test-cblas-blas-saxpy
+               test-rocm-blas-saxpy
+               test-rocm-blas-sgemv
+               test-gpu-array-copy
+               test-gpu-sscal
+               test-gpu-rocm-sigmoid
+               test-gpu-rocm-net
+               test-backgammon-valid-pos
+               test-backgammon-bar-pos
+               test-backgammon-path-edge
+               test-backgammon-path-1mv test-backgammon-path-2mv)))
