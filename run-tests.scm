@@ -63,4 +63,5 @@
                test-backgammon-bar-pos
                test-backgammon-path-edge
                test-backgammon-path-1mv test-backgammon-path-2mv
-               test-backgammon-path-dual)))
+               test-backgammon-path-dual
+               test-backgammon-remove-pts)))
