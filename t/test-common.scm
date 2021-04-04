@@ -37,9 +37,15 @@
 
 (define (test-assert exp . reason)
   (if (not (eq? exp #t))
-      (begin
-        (format #t "Test ~a has failed. ~s~%" *current-test* reason)
-        (exit))))
+    (begin
+      (format #t "Test ~a has failed.~%" *current-test*)
+      (cond
+       ((procedure? (car reason))
+        ((car reason)))
+       (else
+        (apply format (append (list #t) reason))))
+      (newline)
+      (exit))))
 
 (define (epsilon? a b eps)
   (> eps (abs (- a b))))
