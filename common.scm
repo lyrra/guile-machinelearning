@@ -45,9 +45,22 @@
   (array-map! dst (lambda (v) (* v sc))
               vec))
 
-(define (get-opt opts key)
+(define (get-conf opts key)
   (let ((pair (assq key opts)))
     (if pair (cdr pair) #f)))
+
+(define (set-conf-default conf key val)
+  (assq-set! conf key (or (get-conf conf key) val)))
+
+(define (make-conf lst)
+  (let ((cfg '()))
+    (while #t
+      (let ((key (car lst))
+            (val (cadr lst)))
+        (set! cfg (acons key val cfg))
+        (set! lst (cddr lst))
+        (if (eq? '() lst) (break))))
+    cfg))
 
 (define (indent x)
   (do ((i 0 (1+ i)))

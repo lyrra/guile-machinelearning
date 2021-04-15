@@ -9,11 +9,11 @@
   (Vold rl-Vold set-rl-Vold!)
   (eligs rl-eligs set-rl-eligs!))
 
-(define (new-rl opts net)
+(define (new-rl conf net)
   (let ((numhid (gpu-rows (array-ref net 1)))
         (rl (make-rl)))
-    (set-rl-gam! rl (get-opt opts 'rl-gam)) ; td-gamma
-    (set-rl-lam! rl (get-opt opts 'rl-lam)) ; eligibility-trace decay
+    (set-rl-gam! rl (get-conf conf 'rl-gam)) ; td-gamma
+    (set-rl-lam! rl (get-conf conf 'rl-lam)) ; eligibility-trace decay
     (set-rl-net! rl net)
     (set-rl-Vold! rl (make-typed-array 'f32 0. 2)) ; Vold
     (set-rl-eligs! rl
