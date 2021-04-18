@@ -1,8 +1,8 @@
-(define %alpha 0.1)
 
 (define-record-type <rl>
   (make-rl)
   rl?
+  (alpha rl-alpha set-rl-alpha!)
   (gam rl-gam set-rl-gam!)
   (lam rl-lam set-rl-lam!)
   (net rl-net set-rl-net!)
@@ -12,6 +12,7 @@
 (define (new-rl conf net)
   (let ((numhid (gpu-rows (array-ref net 1)))
         (rl (make-rl)))
+    (set-rl-alpha! rl (get-conf conf 'alpha)) ; learning-rate
     (set-rl-gam! rl (get-conf conf 'rl-gam)) ; td-gamma
     (set-rl-lam! rl (get-conf conf 'rl-lam)) ; eligibility-trace decay
     (set-rl-net! rl net)
@@ -38,10 +39,10 @@
   (let* ((net (rl-net rl))
          (Vold (rl-Vold rl))
          (eligs (rl-eligs rl))
+         (alpha (rl-alpha rl))
          (gam (rl-gam rl))
          (lam (rl-lam rl))
          (Vnew (net-vyo net))
-         (alpha %alpha)
          (tderr (make-typed-array 'f32 0. 2))
          (vxi (net-vxi net)))
 
