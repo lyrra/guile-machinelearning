@@ -45,20 +45,22 @@
          (Vnew (net-vyo net))
          (tderr (make-typed-array 'f32 0. 2))
          (vxi (net-vxi net)))
-
     ;---------------------------------------------
     (cond
      (terminal-state
+      ; At the terminal-state we may query our function-approximator,
+      ; but often we arent interested in it, because we have access to the final return,
+      ; which will ground the us in the truth and flow backwards
+      ; ie, tderr <- r + gamma * V(s') - V(s)   at terminal-state should work
+      ; but tderr <- r - V(s)   may make more sense
       (sv-! tderr reward Vold)) ; reward - V(s)
      (else
-      ;(set! alpha (* alpha 0.1)) ; real reward is worth more (really?)
-      ; neural-network version:
-      (sv-! tderr Vnew Vold)
-      ; table-lookup version:
       ; tderr <- r + gamma * V(s') - V(s)
-      ;(svvs*! tderr Vnew gam) ; gamma * V(s')
-      ;(sv-! tderr tderr Vold) ; gamma * V(s') - V(s)
-      ;(array-map! tderr (lambda (x r) (+ x r)) tderr reward))
+      (svvs*! tderr Vnew gam) ; gamma * V(s')
+      (sv-! tderr tderr Vold) ; gamma * V(s') - V(s)
+      (sv+! tderr tderr reward) ; R + gamma * V(s') - V(s)
+      ; if non-terminal reward is zero and gamma is 1, we can make this short-cut:
+      ; (sv-! tderr Vnew Vold)
       ))
 
     ;---------------------------------------------
@@ -67,7 +69,7 @@
     ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
     ; z <- y*L* + Grad[V(s,w)]
     (loop-for elig in eligs do
-      (gpu-sscal! lam elig))
+      (gpu-sscal! (* gam lam) elig))
     (update-eligibility-traces net eligs)
 
     ;---------------------------------------------

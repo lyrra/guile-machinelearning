@@ -36,6 +36,10 @@
               pos))
 
 ; blas style, consider replacing these with calls into blas
+(define (sv+! dst src1 src2)
+  (array-map! dst (lambda (a b)
+                    (+ a b))
+              src1 src2))
 (define (sv-! dst src1 src2)
   (array-map! dst (lambda (a b)
                     (- a b))
