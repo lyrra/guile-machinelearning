@@ -10,10 +10,12 @@
   (eligs rl-eligs set-rl-eligs!))
 
 (define (new-rl conf net)
-  (let ((numin  (gpu-rows (array-ref net 6)))
-        (numout (gpu-rows (array-ref net 5)))
-        (numhid (gpu-rows (array-ref net 1)))
-        (rl (make-rl)))
+
+  (let* ((arrs (netr-arrs net))
+         (numin  (gpu-rows (array-ref arrs 6)))
+         (numout (gpu-rows (array-ref arrs 5)))
+         (numhid (gpu-rows (array-ref arrs 1)))
+         (rl (make-rl)))
     (set-rl-alpha! rl (get-conf conf 'alpha)) ; learning-rate
     (set-rl-gam! rl (get-conf conf 'rl-gam)) ; td-gamma
     (set-rl-lam! rl (get-conf conf 'rl-lam)) ; eligibility-trace decay
@@ -110,7 +112,7 @@
 
 (define (run-ml-learn bg rl reward)
   (let* ((net (rl-net rl))
-         (numout (gpu-rows (array-ref net 5))))
+         (numout (gpu-rows (array-ref (netr-arrs net) 5))))
     ; need to rerun network to get fresh output at each layer
     ; needed by backprop
     (net-run net (or (net-vxi net))) ; uses the best-path as input

@@ -9,7 +9,7 @@
 
 (define (new-agent net rl)
   (let ((agent (make-agent))
-        (numin (gpu-rows (array-ref net 6))))
+        (numin (gpu-rows (array-ref (netr-arrs net) 6))))
     (set-agent-net! agent net)
     (set-agent-rl! agent rl)
     (set-agent-ovxi! agent (make-typed-array 'f32 *unspecified* numin))
@@ -31,5 +31,5 @@
 ; this is so the loser-experience can also be learned.
 (define (agent-end-turn agent)
   (let ((net (agent-net agent)))
-    (if (array? (agent-net agent))
+    (if (netr? (agent-net agent))
         (array-scopy! (net-vxi net) (agent-ovxi agent)))))
