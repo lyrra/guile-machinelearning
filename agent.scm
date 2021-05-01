@@ -9,7 +9,7 @@
 
 (define (new-agent net rl)
   (let ((agent (make-agent))
-        (numin (gpu-rows (array-ref (netr-arrs net) 6))))
+        (numin (if (netr? net) (netr-numin net) 0)))
     (set-agent-net! agent net)
     (set-agent-rl! agent rl)
     (set-agent-ovxi! agent (make-typed-array 'f32 *unspecified* numin))

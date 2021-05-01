@@ -3,6 +3,9 @@
 (define-record-type <netr>
   (make-netr)
   netr?
+  (numin netr-numin set-netr-numin!)
+  (numout netr-numout set-netr-numout!)
+  (numhid netr-numhid set-netr-numhid!)
   (in   netr-in   set-netr-in!)
   (out  netr-out  set-netr-out!)
   (hid  netr-hid  set-netr-hid!)
@@ -49,7 +52,10 @@
     (array-set! net (gpu-make-vector out)     4) ; vyz
     (array-set! net (gpu-make-vector out)     5) ; vyo
     (array-set! net (gpu-make-vector in)      6) ; vxi
-    (set-netr-arrs! netr net)
+    (set-netr-arrs!   netr net)
+    (set-netr-numin!  netr  in)
+    (set-netr-numout! netr out)
+    (set-netr-numhid! netr hid)
     (if init
       (array-for-each (lambda (arr)
        (gpu-array-apply arr (lambda (x) (* 0.01 (- (random-uniform) .5)))))
