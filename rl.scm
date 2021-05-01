@@ -10,18 +10,20 @@
   (eligs rl-eligs set-rl-eligs!))
 
 (define (new-rl conf net)
-  (let ((numhid (gpu-rows (array-ref net 1)))
+  (let ((numin  (gpu-rows (array-ref net 6)))
+        (numout (gpu-rows (array-ref net 5)))
+        (numhid (gpu-rows (array-ref net 1)))
         (rl (make-rl)))
     (set-rl-alpha! rl (get-conf conf 'alpha)) ; learning-rate
     (set-rl-gam! rl (get-conf conf 'rl-gam)) ; td-gamma
     (set-rl-lam! rl (get-conf conf 'rl-lam)) ; eligibility-trace decay
     (set-rl-net! rl net)
-    (set-rl-Vold! rl (make-typed-array 'f32 0. 2)) ; Vold
+    (set-rl-Vold! rl (make-typed-array 'f32 0. numout)) ; Vold
     (set-rl-eligs! rl
                    ; eligibility traces, 0-1 is index in output-layer
-                   (list (gpu-make-matrix numhid 198) ; mhw-0
-                         (gpu-make-matrix numhid 198) ; mhw-1
-                         (gpu-make-matrix 2  numhid))) ; myw-0
+                   (list (gpu-make-matrix numhid numin) ; mhw-0
+                         (gpu-make-matrix numhid numin) ; mhw-1
+                         (gpu-make-matrix numout numhid))) ; myw-0
     rl))
 
 (define (rl-episode-clear rl)
@@ -43,7 +45,7 @@
          (gam (rl-gam rl))
          (lam (rl-lam rl))
          (Vnew (net-vyo net))
-         (tderr (make-typed-array 'f32 0. 2))
+         (tderr (make-typed-array 'f32 0. (array-length Vold)))
          (vxi (net-vxi net)))
     ;---------------------------------------------
     (cond
@@ -84,8 +86,8 @@
 
 (define (rl-policy-greedy-action agent cur-state fea-states)
   (let* ((net agent)
-         (bvxi (make-typed-array 'f32 *unspecified* 198))
          (vxi (net-vxi net)) ; lend networks-input array
+         (bvxi (make-typed-array 'f32 *unspecified* (array-length vxi)))
          (points -999)
          (best-state #f))
     (loop-for state in fea-states do
@@ -107,14 +109,15 @@
         #f)))
 
 (define (run-ml-learn bg rl reward)
-  (let ((net (rl-net rl)))
+  (let* ((net (rl-net rl))
+         (numout (gpu-rows (array-ref net 5))))
     ; need to rerun network to get fresh output at each layer
     ; needed by backprop
     (net-run net (or (net-vxi net))) ; uses the best-path as input
     (match reward
       ((reward terminal-state)
        ; sane state
-       (let ((rewarr (make-typed-array 'f32 0. 2)))
+       (let ((rewarr (make-typed-array 'f32 0. numout)))
          (cond
           ((>= reward 0)
            (array-set! rewarr 1. 0)

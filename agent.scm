@@ -8,10 +8,11 @@
   (ovxi agent-ovxi set-agent-ovxi!))
 
 (define (new-agent net rl)
-  (let ((agent (make-agent)))
+  (let ((agent (make-agent))
+        (numin (gpu-rows (array-ref net 6))))
     (set-agent-net! agent net)
     (set-agent-rl! agent rl)
-    (set-agent-ovxi! agent (make-typed-array 'f32 *unspecified* 198))
+    (set-agent-ovxi! agent (make-typed-array 'f32 *unspecified* numin))
     agent))
 
 (define (agent-init agent bg)

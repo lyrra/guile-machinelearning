@@ -29,15 +29,15 @@
                       net))
     #:encoding #f #:binary #t))
 
-(define* (make-net numhid #:optional (init #t))
+(define* (make-net #:key (init #t) in out hid)
   (let ((net (make-array #f 7)))
-    (array-set! net (gpu-make-matrix numhid 198) 0) ; mhw
-    (array-set! net (gpu-make-vector numhid)     1) ; vhz
-    (array-set! net (gpu-make-vector numhid)     2) ; vho
-    (array-set! net (gpu-make-matrix 2 numhid)   3) ; myw
-    (array-set! net (gpu-make-vector 2)      4) ; vyz
-    (array-set! net (gpu-make-vector 2)      5) ; vyo
-    (array-set! net (gpu-make-vector 198)    6) ; vxi
+    (array-set! net (gpu-make-matrix hid in)  0) ; mhw
+    (array-set! net (gpu-make-vector hid)     1) ; vhz
+    (array-set! net (gpu-make-vector hid)     2) ; vho
+    (array-set! net (gpu-make-matrix out hid) 3) ; myw
+    (array-set! net (gpu-make-vector out)     4) ; vyz
+    (array-set! net (gpu-make-vector out)     5) ; vyo
+    (array-set! net (gpu-make-vector in)      6) ; vxi
     (if init
       (array-for-each (lambda (arr)
        (gpu-array-apply arr (lambda (x) (* 0.01 (- (random-uniform) .5)))))
@@ -56,7 +56,10 @@
     net2))
 
 (define* (net-make-from arrs #:optional (init #t))
-  (let ((net2 (make-net (array-length (array-ref arrs 1)) init)))
+  (let* ((in  (array-length (array-ref arrs 6)))
+         (out (array-length (array-ref arrs 5)))
+         (hid (array-length (array-ref arrs 1)))
+         (net2 (make-net #:init init #:in in #:out out #:hid hid)))
     (do ((i 0 (+ i 1))) ((>= i 7))
       (gpu-array-copy (array-ref net2 i) (array-ref arrs i)))
     net2))
@@ -75,7 +78,10 @@
   (gpu-array-copy (array-ref net 6) input))
 
 (define (net-copy src)
-  (let ((dst (make-net (gpu-rows (array-ref src 1)))))
+  (let* ((in  (gpu-rows (array-ref src 6)))
+         (out (gpu-rows (array-ref src 5)))
+         (hid (gpu-rows (array-ref src 1)))
+         (dst (make-net #:init #f #:in in #:out out #:hid hid)))
     (do ((i 0 (+ i 1))) ((>= i 7))
       (gpu-array-map! (array-ref dst i)
                       (lambda (x) x)
