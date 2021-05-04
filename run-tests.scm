@@ -68,4 +68,5 @@
                test-backgammon-remove-pts
                test-backgammon-bar
                test-net-load/save
+               test-write/load-arrays
                )))
