@@ -43,6 +43,7 @@
 (load "t/test-rocm-blas.scm") ; test gpu-abstraction with hardware
 (load "t/test-gpu-rocm-net.scm")
 (load "t/test-backgammon-moves.scm")
+(load "t/test-net.scm")
 
 (begin
   (init-rand)
@@ -65,4 +66,6 @@
                test-backgammon-path-1mv test-backgammon-path-2mv
                test-backgammon-path-dual
                test-backgammon-remove-pts
-               test-backgammon-bar)))
+               test-backgammon-bar
+               test-net-load/save
+               )))
