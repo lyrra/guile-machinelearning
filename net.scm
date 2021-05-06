@@ -1,4 +1,3 @@
-(use-modules (ice-9 binary-ports))
 
 (define-record-type <netr>
   (make-netr)
@@ -14,37 +13,37 @@
   ; old
   (arrs netr-arrs set-netr-arrs!))
 
-(define (port-read-arrays p)
-  (let* ((arrlen (port-read-uint32 p))
+(define (bio--read-arrays p)
+  (let* ((arrlen (bio-read-uint32 p))
          (net (make-array #f arrlen)))
     (do ((n 0 (1+ n)))
         ((>= n arrlen))
-      (let ((arr (port-read-array/matrix p)))
+      (let ((arr (bio-read-array/matrix p)))
         (array-set! net arr n)))
     net))
 
-(define (port-write-arrays p arrs)
-  (port-write-uint32 p (array-length arrs))
+(define (bio--write-arrays p arrs)
+  (bio-write-uint32 p (array-length arrs))
   (array-for-each (lambda (gpu-arr)
                     (gpu-refresh-host gpu-arr)
-                    (port-write-array/matrix p (gpu-array gpu-arr)))
+                    (bio-write-array/matrix p (gpu-array gpu-arr)))
                   arrs))
 
 (define (file-load-net file)
   (call-with-input-file file
     (lambda (p)
-      (let ((ver (port-read-uint32 p))) ; version
+      (let ((ver (bio-read-uint32 p))) ; version
         (cond
          ((= ver 1)
-          (port-read-uint32 p) ; episode
-          (let ((net (port-read-arrays p)))
+          (bio-read-uint32 p) ; episode
+          (let ((net (bio--read-arrays p)))
             (net-make-from net #f)))
          (else
-          (port-read-uint32 p)  ; episode
-          (let ((numin  (port-read-uint32 p))
-                (numout (port-read-uint32 p))
-                (numhid (port-read-uint32 p)))
-            (let* ((arrs (port-read-arrays p))
+          (bio-read-uint32 p)  ; episode
+          (let ((numin  (bio-read-uint32 p))
+                (numout (bio-read-uint32 p))
+                (numhid (bio-read-uint32 p)))
+            (let* ((arrs (bio--read-arrays p))
                    (net2 (make-net #:init #f #:in numin #:out numout #:hid numhid))
                    (arrs2 (netr-arrs net2)))
               (do ((i 0 (+ i 1))) ((>= i (array-length arrs)))
@@ -57,12 +56,12 @@
 (define (file-write-net file episode net)
   (call-with-output-file file
     (lambda (p)
-      (port-write-uint32 p 2) ; version
-      (port-write-uint32 p episode)
-      (port-write-uint32 p (netr-numin  net))
-      (port-write-uint32 p (netr-numout net))
-      (port-write-uint32 p (netr-numhid net))
-      (port-write-arrays p (netr-arrs net)))
+      (bio-write-uint32 p 2) ; version
+      (bio-write-uint32 p episode)
+      (bio-write-uint32 p (netr-numin  net))
+      (bio-write-uint32 p (netr-numout net))
+      (bio-write-uint32 p (netr-numhid net))
+      (bio--write-arrays p (netr-arrs net)))
     #:encoding #f #:binary #t))
 
 (define* (make-net #:key (init #t) in out hid)

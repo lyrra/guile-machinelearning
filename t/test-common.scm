@@ -56,7 +56,8 @@
   ; ensure each array is equal dimension
   (for-each (lambda (arr brr)
               (test-assert (equal? (array-dimensions arr)
-                                   (array-dimensions brr))))
+                                   (array-dimensions brr))
+                           "not-equal-dimensions"))
             arrs brrs)
   ; ensure array content is equal
   (for-each (lambda (arr brr)

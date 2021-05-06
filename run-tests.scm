@@ -6,6 +6,7 @@
 (import (ffi cblas))
 (load "common-lisp.scm")
 (load "common.scm")
+(load "bio.scm")
 (load "mat.scm")
 (load "sigmoid.scm")
 (load "gpu.scm")
@@ -44,6 +45,7 @@
 (load "t/test-gpu-rocm-net.scm")
 (load "t/test-backgammon-moves.scm")
 (load "t/test-net.scm")
+(load "t/test-bio.scm")
 
 (begin
   (init-rand)
@@ -69,4 +71,5 @@
                test-backgammon-bar
                test-net-load/save
                test-write/load-arrays
+               test-bio
                )))

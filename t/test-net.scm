@@ -15,12 +15,12 @@
                                      0.0000002))))
     (call-with-output-file fname
       (lambda (p)
-        (port-write-arrays p (netr-arrs net)))
+        (bio--write-arrays p (netr-arrs net)))
       #:encoding #f #:binary #t)
 
     (call-with-input-file fname
       (lambda (p)
-        (let ((arrs (port-read-arrays p)))
+        (let ((arrs (bio--read-arrays p)))
           (test-array arrs (netr-arrs net))))
       #:guess-encoding #f
       #:encoding #f
