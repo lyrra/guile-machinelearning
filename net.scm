@@ -190,11 +190,11 @@
      ; hidden layer
      (match (gpu-array-dimensions mhw)
        ((r c)
+        (do ((j 0 (+ j 1))) ((= j (netr-numout net))) ; j = each output error
         (do ((i 0 (+ i 1))) ((= i r)) ; i = each hidden neuron
-          (let ((tde0 (* alpha (array-ref tderr 0)))
-                (tde1 (* alpha (array-ref tderr 1))))
-            (gpu-saxpy! tde0 emhw0 mhw i i)
-            (gpu-saxpy! tde1 emhw1 mhw i i))))))))))
+          (gpu-saxpy! (* alpha (array-ref tderr j))
+                      (if (= j 0) emhw0 emhw1)
+                      mhw i i))))))))))
 
 ; discount eligibility traces
 ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
@@ -206,14 +206,15 @@
     ((emhw0 emhw1 emyw0)
   (match (netr-arrs net)
     (#(mhw vhz vho myw vyz vyo vxi)
-     (let* ((numhid (gpu-rows vhz))
-            (go  (make-typed-array 'f32 0.  2))
+     (let* ((numhid (netr-numhid net))
+            (numout (netr-numout net))
+            (go  (make-typed-array 'f32 0. numout))
             (gho (gpu-make-matrix 2 numhid)))
        (gpu-array-apply gho (lambda (x) 0.))
        (gpu-refresh vyz)
        (set-sigmoid-gradient! go (gpu-array vyz))
 
-       (do ((i 0 (+ i 1))) ((= i 2))
+       (do ((i 0 (+ i 1))) ((= i numout))
          (gpu-saxpy! (array-ref go i) vho emyw0 #f i)
          ;(gpu-saxpy! (array-ref go i) myw gho   i  i)
          (saxpy! (array-ref go i)
@@ -232,6 +233,6 @@
                   (z (array-ref vhza j)))
               (array-set! (gpu-array gho) (* g (sigmoid-grad z)) i j)))))))
 
-       (do ((k 0 (+ k 1))) ((= k 2))
+       (do ((k 0 (+ k 1))) ((= k numout))
          (do ((i 0 (+ i 1))) ((= i numhid))
            (gpu-saxpy! (array-ref (gpu-array gho) k i) vxi (if (= k 0) emhw0 emhw1) #f i)))))))))
