@@ -19,14 +19,13 @@
     (set-rl-lam! rl (get-conf conf 'rl-lam)) ; eligibility-trace decay
     (set-rl-net! rl net)
     (set-rl-Vold! rl (make-typed-array 'f32 0. numout)) ; Vold
-    (set-rl-eligs! rl
-                   ; eligibility traces, 0-1 is index in output-layer
-                   (list (gpu-make-matrix numhid numin) ; mhw-0
-                         (gpu-make-matrix numhid numin) ; mhw-1
-                         (gpu-make-matrix numout numhid))) ; myw-0
+    (set-rl-eligs! rl #f)
     rl))
 
 (define (rl-episode-clear rl)
+  ; in self-play (same network), we need two sets of eligibility-traces
+  (if (not (rl-eligs rl))
+    (set-rl-eligs! rl (net-grad-clone (rl-net rl))))
   ; initialize eligibily traces to 0
   (loop-for arr in (rl-eligs rl) do
     (gpu-array-apply arr (lambda (x) 0.))))
@@ -70,9 +69,9 @@
     ; update eligibility traces
     ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
     ; z <- y*L* + Grad[V(s,w)]
-    (loop-for elig in eligs do
-      (gpu-sscal! (* gam lam) elig))
-    (update-eligibility-traces net eligs)
+    ;(loop-for elig in eligs do
+    ;  (gpu-sscal! (* gam lam) elig))
+    (update-eligibility-traces net eligs (* gam lam))
 
     ;---------------------------------------------
     ; update network weights (Alpha * Error * Gradient)

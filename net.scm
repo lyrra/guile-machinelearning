@@ -78,6 +78,11 @@
     (set-netr-numin!  netr  in)
     (set-netr-numout! netr out)
     (set-netr-numhid! netr hid)
+    (set-netr-grad! netr
+                    ; eligibility traces, 0-1 is index in output-layer
+                    (list (gpu-make-matrix hid in) ; mhw-0
+                          (gpu-make-matrix hid in) ; mhw-1
+                          (gpu-make-matrix out hid))) ; myw-0
     (if init
       (array-for-each (lambda (arr)
        (gpu-array-apply arr (lambda (x) (* 0.01 (- (random-uniform) .5)))))
@@ -106,6 +111,10 @@
     (do ((i 0 (+ i 1))) ((>= i 7))
       (gpu-array-copy (array-ref arrs2 i) (array-ref arrs i)))
     net2))
+
+(define (net-grad-clone net)
+  (map-in-order gpu-array-clone
+                (netr-grad net)))
 
 ; get array's as refreshed host-arrays
 (define (net-vyo netr)
@@ -187,8 +196,12 @@
             (gpu-saxpy! tde0 emhw0 mhw i i)
             (gpu-saxpy! tde1 emhw1 mhw i i))))))))))
 
-; gradient-descent, return weight update in grads
-(define (update-eligibility-traces net eligs)
+; discount eligibility traces
+; elig  <- gamma*lambda * elig + Grad_theta(V(s))
+; z <- y*L* + Grad[V(s,w)]
+(define (update-eligibility-traces net eligs gamlam)
+  (loop-for elig in eligs do
+    (gpu-sscal! gamlam elig))
   (match eligs
     ((emhw0 emhw1 emyw0)
   (match (netr-arrs net)
