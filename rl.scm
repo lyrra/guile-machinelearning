@@ -27,8 +27,7 @@
   (if (not (rl-eligs rl))
     (set-rl-eligs! rl (net-grad-clone (rl-net rl))))
   ; initialize eligibily traces to 0
-  (loop-for arr in (rl-eligs rl) do
-    (gpu-array-apply arr (lambda (x) 0.))))
+  (net-grad-clear (rl-eligs rl)))
 
 (define (rl-init-step rl)
   (let* ((net (rl-net rl))
