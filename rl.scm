@@ -84,6 +84,7 @@
 
 (define (rl-policy-greedy-action agent cur-state fea-states)
   (let* ((net agent)
+         (numout (netr-numout net))
          (vxi (net-vxi net)) ; lend networks-input array
          (bvxi (make-typed-array 'f32 *unspecified* (array-length vxi)))
          (points -999)
@@ -93,10 +94,15 @@
       (net-run net vxi)
       (let ((out (net-vyo net)))
         ; FIX: should we consider white(idx-0) > black(idx-1) ?
-        (when (> (- (array-ref out 0) (array-ref out 1)) points)
+        (when (> (if (> numout 1)
+                     (- (array-ref out 0) (array-ref out 1))
+                     (array-ref out 0))
+                 points)
           ; keep best-scored
           ;(LLL "  best-net-out: ~s~%" out)
-          (set! points (- (array-ref out 0) (array-ref out 1)))
+          (set! points (if (> numout 1)
+                           (- (array-ref out 0) (array-ref out 1))
+                           (array-ref out 0)))
           (set! best-state state)
           (array-scopy! vxi bvxi))))
     (if best-state ; if path found, ie didn't terminate
@@ -119,8 +125,10 @@
          (cond
           ((>= reward 0)
            (array-set! rewarr 1. 0)
-           (array-set! rewarr 0. 1))
+           (if (> numout 1)
+             (array-set! rewarr 0. 1)))
           ((< reward 0)
            (array-set! rewarr 0. 0)
-           (array-set! rewarr 1. 1)))
+           (if (> numout 1)
+             (array-set! rewarr 1. 1))))
          (run-tderr rewarr rl terminal-state))))))
