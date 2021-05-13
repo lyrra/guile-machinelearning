@@ -84,7 +84,13 @@
                                (lst '()))
                               ((= i out) lst)
                             (set! lst (cons (gpu-make-matrix hid in) lst)))
-                          (list (gpu-make-matrix out hid))))
+                          (do ((i 0 (1+ i))
+                               (lst '()))
+                              ((= i out) lst)
+                            (set! lst (cons (gpu-make-vector hid) lst)))
+
+                          ;(list (gpu-make-matrix out hid))
+                          ))
     (if init
       (array-for-each (lambda (arr)
        (gpu-array-apply arr (lambda (x) (* 0.01 (- (random-uniform) .5)))))
@@ -199,11 +205,11 @@
                 (ei (length eligs))
                 (oi (gpu-rows mw)))
            (do ((e 0 (+ e 1))) ((= e ei)) ; for each eligibility mirror
-           (do ((i 0 (+ i 1))) ((= i (gpu-rows mw))) ; for each neuron in this layer
-             (let ((tde (* alpha (array-ref tderr
-                                            (if (= ei 1) i e) ; KLUDGE
-                                            ))))
-               (gpu-saxpy! tde (list-ref eligs e) mw i i))))))))))
+             (let ((tde (* alpha (array-ref tderr e))))
+               (do ((i 0 (+ i 1))) ((= i (gpu-rows mw))) ; for each neuron in this layer
+                 (gpu-saxpy! tde (list-ref eligs e) mw
+                             (if (= el 0) #f i) ; elig at output-layer is a vector
+                             i))))))))))
 
 ; discount eligibility traces
 ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
@@ -217,7 +223,7 @@
          (vxi (array-ref arrs (1- len)))
          (numhid (netr-numhid net))
          (numout (netr-numout net))
-         (nextg #f) ; next-to-be-calculated gradient, is nearear input-layer
+         (nextg #f) ; next-to-be-calculated gradient, towards input-layer
          (eliglays (reverse eligs)))
       ; go through the networks layers starting from the output layer
       ; the very last layer holds a copy of the input, so skip that
@@ -231,35 +237,39 @@
                (mw (array-ref arrs l)) ; weight-layer
                (mz (array-ref arrs (+ l 1))) ; linear-layer
                (ma (array-ref arrs (+ l 2))) ; activation-layer
-               (len (array-length (gpu-array ma)))
+               (len (array-length (gpu-array ma))) ; number of neurons in current layer
                (eligs (list-ref eliglays el))
                (ei (length eligs))
                (currg (or nextg (gpu-make-matrix ei len)))
                (next2g (gpu-make-matrix len (gpu-cols mw))))
           (if (not nextg) ; begin gradient backward prop using a "fake" error of 1
-            (gpu-array-apply currg (lambda (x) 1.)))
+            (gpu-array-apply currg (lambda (x) 1.))) ; alas, state receives an reinfoce-event
           (gpu-array-apply next2g (lambda (x) 0.))
           ; calculate gradient
           (gpu-refresh mz)
           ;FIX: generalize into: (set-sigmoid-gradient! currg (gpu-array mz))
           (let ((mzarr (gpu-array mz)))
-            (do ((i 0 (+ i 1))) ((= i ei)) ; i = each output neuron
-            (do ((j 0 (+ j 1))) ((= j len)) ; j = each hidden output
+            (do ((i 0 (+ i 1))) ((= i ei)) ; i = foreach elig-mirror / output-neuron
+            (do ((j 0 (+ j 1))) ((= j len)) ; j = each neuron in this layer
               (let ((g (array-ref (gpu-array currg) i j))
                     (z (array-ref mzarr j)))
-                (array-set! (gpu-array currg) (* g (sigmoid-grad z)) i j)))))
+                (if (= el 0)
+                    (if (= i j)
+                      (array-set! (gpu-array currg) (* g (sigmoid-grad z)) i j)
+                      (array-set! (gpu-array currg) 0. i j))
+                    (array-set! (gpu-array currg) (* g (sigmoid-grad z)) i j))))))
           ;----------------------------------------------------------------
           ; update gradient
-          (do ((e 0 (+ e 1))) ((= e ei)) ; matches number of outputs in current layer
-          (do ((i 0 (+ i 1))) ((= i len)) ; matches number of inputs in current layer
+          (do ((e 0 (+ e 1))) ((= e ei)) ; foreach elig-mirrors
+          (do ((i 0 (+ i 1))) ((= i len)) ; foreach neuron in current layer
             (gpu-saxpy! (array-ref (gpu-array currg) e i)
                         mx
                         (list-ref eligs e)
-                        (if (= 2 (length (array-dimensions (gpu-array mx))))
-                          e #f)
-                        i)))
-          (do ((e 0 (+ e 1))) ((= e ei))  ; matches number of outputs in current layer
-          (do ((i 0 (+ i 1))) ((= i len)) ; matches number of inputs in current layer
+                        #f
+                        (if (= 0 el) #f i))))
+
+          (do ((e 0 (+ e 1))) ((= e ei))
+          (do ((i 0 (+ i 1))) ((= i len))
             (saxpy! (array-ref (gpu-array currg) e i)
                     (array-cell-ref (gpu-array mw) i)
                     (array-cell-ref (gpu-array next2g) i))))
