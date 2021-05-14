@@ -87,10 +87,7 @@
                           (do ((i 0 (1+ i))
                                (lst '()))
                               ((= i out) lst)
-                            (set! lst (cons (gpu-make-vector hid) lst)))
-
-                          ;(list (gpu-make-matrix out hid))
-                          ))
+                            (set! lst (cons (gpu-make-vector hid) lst)))))
     (if init
       (array-for-each (lambda (arr)
        (gpu-array-apply arr (lambda (x) (* 0.01 (- (random-uniform) .5)))))
@@ -205,11 +202,12 @@
                 (ei (length eligs))
                 (oi (gpu-rows mw)))
            (do ((e 0 (+ e 1))) ((= e ei)) ; for each eligibility mirror
-             (let ((tde (* alpha (array-ref tderr e))))
-               (do ((i 0 (+ i 1))) ((= i (gpu-rows mw))) ; for each neuron in this layer
+           (do ((i 0 (+ i 1))) ((= i (gpu-rows mw))) ; for each neuron in this layer
+             (let ((tde (* alpha (array-ref tderr (if (= 0 el) i e)))))
+               (if (or (> el 0) (= i e))
                  (gpu-saxpy! tde (list-ref eligs e) mw
-                             (if (= el 0) #f i) ; elig at output-layer is a vector
-                             i))))))))))
+                             (if (= 0 el) #f i) ; elig at output-layer is a vector
+                             i)))))))))))
 
 ; discount eligibility traces
 ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
@@ -217,7 +215,7 @@
 (define (update-eligibility-traces net eligs gamlam)
   (loop-for lst in eligs do
     (loop-for gar in lst do
-      (gpu-sscal! gamlam gar)))
+      (gpu-array-apply gar (lambda (x) (* gamlam x)))))
   (let* ((arrs (netr-arrs net))
          (len (array-length arrs))
          (vxi (array-ref arrs (1- len)))
@@ -253,7 +251,7 @@
             (do ((j 0 (+ j 1))) ((= j len)) ; j = each neuron in this layer
               (let ((g (array-ref (gpu-array currg) i j))
                     (z (array-ref mzarr j)))
-                (if (= el 0)
+                  (if (= el 0)
                     (if (= i j)
                       (array-set! (gpu-array currg) (* g (sigmoid-grad z)) i j)
                       (array-set! (gpu-array currg) 0. i j))
@@ -262,12 +260,14 @@
           ; update gradient
           (do ((e 0 (+ e 1))) ((= e ei)) ; foreach elig-mirrors
           (do ((i 0 (+ i 1))) ((= i len)) ; foreach neuron in current layer
-            (gpu-saxpy! (array-ref (gpu-array currg) e i)
-                        mx
-                        (list-ref eligs e)
-                        #f
-                        (if (= 0 el) #f i))))
-
+            (if (or (> el 0) (= i e))
+              (gpu-saxpy! (array-ref (gpu-array currg) e i)
+                          mx
+                          (list-ref eligs e)
+                          #f
+                          (if (= 0 el) #f i)))))
+          ;----------------------------------------------------------------
+          ; move gradient to next layer
           (do ((e 0 (+ e 1))) ((= e ei))
           (do ((i 0 (+ i 1))) ((= i len))
             (saxpy! (array-ref (gpu-array currg) e i)
