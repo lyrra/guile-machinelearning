@@ -70,6 +70,7 @@
                test-backgammon-remove-pts
                test-backgammon-bar
                test-net-load/save
-               test-write/load-arrays
+               test-net-write/load-arrays
+               test-net-run
                test-bio
                )))
