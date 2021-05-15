@@ -72,5 +72,6 @@
                test-net-load/save
                test-net-write/load-arrays
                test-net-run
+               test-net-update-weights
                test-bio
                )))
