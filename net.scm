@@ -215,6 +215,7 @@
 (define (update-eligibility-traces net eligs gamlam)
   (loop-for lst in eligs do
     (loop-for gar in lst do
+      ;(gpu-sscal! gamlam gar) ; gives discrepancies
       (gpu-array-apply gar (lambda (x) (* gamlam x)))))
   (let* ((arrs (netr-arrs net))
          (len (array-length arrs))

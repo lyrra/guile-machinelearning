@@ -73,5 +73,7 @@
                test-net-write/load-arrays
                test-net-run
                test-net-update-weights
+               test-net-update-eligibility-traces
+               test-net-update-eligibility-traces2
                test-bio
                )))
