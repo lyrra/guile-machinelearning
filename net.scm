@@ -188,26 +188,24 @@
 ; gradient-descent, return weight update in grads
 ; historically this was backprop, therefore we update the layers in reverse
 (define (update-weights net alpha tderr grads)
-  (match (netr-arrs net)
-    (#(mhw vhz vho myw vyz vyo vxi)
-     (let* ((arrs (netr-arrs net))
-            (len (array-length arrs))
-            (eliglays (reverse grads))
-            (numout (array-length tderr)))
-       (do ((l (- len 1 3) (- l 3))
-            (el 0 (1+ el)))
-           ((< l 0))
-         (let* ((mw (array-ref arrs l)) ; weight-layer
-                (eligs (list-ref eliglays el))
-                (ei (length eligs))
-                (oi (gpu-rows mw)))
-           (do ((e 0 (+ e 1))) ((= e ei)) ; for each eligibility mirror
-           (do ((i 0 (+ i 1))) ((= i (gpu-rows mw))) ; for each neuron in this layer
-             (let ((tde (* alpha (array-ref tderr (if (= 0 el) i e)))))
-               (if (or (> el 0) (= i e))
-                 (gpu-saxpy! tde (list-ref eligs e) mw
-                             (if (= 0 el) #f i) ; elig at output-layer is a vector
-                             i)))))))))))
+  (let* ((arrs (netr-arrs net))
+         (len (array-length arrs))
+         (eliglays (reverse grads))
+         (numout (array-length tderr)))
+    (do ((l (- len 1 3) (- l 3))
+         (el 0 (1+ el)))
+        ((< l 0))
+      (let* ((mw (array-ref arrs l)) ; weight-layer
+             (eligs (list-ref eliglays el))
+             (ei (length eligs))
+             (oi (gpu-rows mw)))
+        (do ((e 0 (+ e 1))) ((= e ei)) ; for each eligibility mirror
+          (do ((i 0 (+ i 1))) ((= i (gpu-rows mw))) ; for each neuron in this layer
+            (let ((tde (* alpha (array-ref tderr (if (= 0 el) i e)))))
+              (if (or (> el 0) (= i e))
+                  (gpu-saxpy! tde (list-ref eligs e) mw
+                              (if (= 0 el) #f i) ; elig at output-layer is a vector
+                              i)))))))))
 
 ; discount eligibility traces
 ; elig  <- gamma*lambda * elig + Grad_theta(V(s))
