@@ -185,6 +185,13 @@
      (gpu-array-sigmoid vyz vyo)
      #f)))
 
+(define (net-weights-scale net proc alpha)
+  (let* ((arrs (netr-arrs net))
+         (mhw (array-ref arrs 0))
+         (myw (array-ref arrs 3)))
+    (gpu-array-apply mhw (lambda (x) (proc 0 alpha x)))
+    (gpu-array-apply myw (lambda (x) (proc 1 alpha x)))))
+
 ; gradient-descent, return weight update in grads
 ; historically this was backprop, therefore we update the layers in reverse
 (define (update-weights net alpha tderr grads)
