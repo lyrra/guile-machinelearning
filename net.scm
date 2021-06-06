@@ -2,6 +2,7 @@
 (define-record-type <netr>
   (make-netr)
   netr?
+  (info netr-info set-netr-info!)
   (numin netr-numin set-netr-numin!)
   (numout netr-numout set-netr-numout!)
   (numhid netr-numhid set-netr-numhid!)
@@ -35,17 +36,20 @@
       (let ((ver (bio-read-uint32 p))) ; version
         (cond
          ((= ver 1)
-          (bio-read-uint32 p) ; episode
-          (let ((net (bio--read-arrays p)))
-            (net-make-from net #f)))
+          (let* ((episode (bio-read-uint32 p))
+                 (net (bio--read-arrays p))
+                 (net2 (net-make-from net #f)))
+            (set-netr-info! net2 (list 'episode episode))
+            net2))
          (else
-          (bio-read-uint32 p)  ; episode
-          (let ((numin  (bio-read-uint32 p))
+          (let ((episode (bio-read-uint32 p))
+                (numin  (bio-read-uint32 p))
                 (numout (bio-read-uint32 p))
                 (numhid (bio-read-uint32 p)))
             (let* ((arrs (bio--read-arrays p))
                    (net2 (make-net #:init #f #:in numin #:out numout #:hid numhid))
                    (arrs2 (netr-arrs net2)))
+              (set-netr-info! net2 (list 'episode episode))
               (do ((i 0 (+ i 1))) ((>= i (array-length arrs)))
                 (gpu-array-copy (array-ref arrs2 i) (array-ref arrs i)))
               net2))))))
