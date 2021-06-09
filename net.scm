@@ -12,7 +12,8 @@
   (act  netr-act  set-netr-act!)
   (grad netr-grad set-netr-grad!)
   ; old
-  (arrs netr-arrs set-netr-arrs!))
+  (arrs netr-arrs set-netr-arrs!)
+  (wdelta netr-wdelta set-netr-wdelta!))
 
 (define (bio--read-arrays p)
   (let* ((arrlen (bio-read-uint32 p))
@@ -70,7 +71,8 @@
 
 (define* (make-net #:key (init #t) in out hid)
   (let ((netr (make-netr))
-        (net (make-array #f 7)))
+        (net (make-array #f 7))
+        (wdelta (make-array #f 2)))
     (array-set! net (gpu-make-matrix hid in)  0) ; mhw
     (array-set! net (gpu-make-vector hid)     1) ; vhz
     (array-set! net (gpu-make-vector hid)     2) ; vho
@@ -78,6 +80,11 @@
     (array-set! net (gpu-make-vector out)     4) ; vyz
     (array-set! net (gpu-make-vector out)     5) ; vyo
     (array-set! net (gpu-make-vector in)      6) ; vxi
+    ; setup weight-change cache
+    (array-set! wdelta (gpu-make-matrix hid in)  0) ; mhw
+    (array-set! wdelta (gpu-make-matrix out hid) 1) ; myw
+    (set-netr-wdelta! netr wdelta)
+    ;
     (set-netr-arrs!   netr net)
     (set-netr-numin!  netr  in)
     (set-netr-numout! netr out)
@@ -129,6 +136,11 @@
   (loop-for lst in eligs do
     (loop-for arr in lst do
       (gpu-array-apply arr (lambda (x) 0.)))))
+
+(define (net-wdelta-clear net)
+  (array-for-each (lambda (wdelta)
+                    (gpu-array-apply wdelta (lambda (x) 0.)))
+                  (netr-wdelta net)))
 
 ; get array's as refreshed host-arrays
 (define (net-vyo netr)
@@ -195,6 +207,47 @@
          (myw (array-ref arrs 3)))
     (gpu-array-apply mhw (lambda (x) (proc 0 alpha x)))
     (gpu-array-apply myw (lambda (x) (proc 1 alpha x)))))
+
+(define (net-accu-wdelta net alpha tderr grads)
+  (let* ((arrs (netr-arrs net))
+         (len (array-length arrs))
+         (eliglays (reverse grads))
+         (numout (array-length tderr))
+         (numweil (array-length (netr-wdelta net))))
+    (do ((l (- len 1 3) (- l 3))
+         (el 0 (1+ el)))
+        ((< l 0))
+      ;(format #t "el: ~s~%" (- numweil el 1))
+      (let* (;(mw (array-ref arrs l)) ; weight-layer
+             (mw (array-ref (netr-wdelta net) (- numweil el 1)))
+             (eligs (list-ref eliglays el))
+             (ei (length eligs))
+             (oi (gpu-rows mw)))
+        ;(format #t "mw-dim: ~s <=> ~s~%" (gpu-array-dimensions mw)
+        ;                                 (gpu-array-dimensions mw2))
+        (do ((e 0 (+ e 1))) ((= e ei)) ; for each eligibility mirror
+          (do ((i 0 (+ i 1))) ((= i (gpu-rows mw))) ; for each neuron in this layer
+            (let ((tde (* alpha (array-ref tderr (if (= 0 el) i e)))))
+              (if (or (> el 0) (= i e))
+                  (gpu-saxpy! tde (list-ref eligs e) mw
+                              (if (= 0 el) #f i) ; elig at output-layer is a vector
+                              i)))))))))
+
+(define (net-add-wdelta net)
+  (let* ((arrs (netr-arrs net))
+         (len (array-length arrs))
+         (numweil (array-length (netr-wdelta net))))
+    (do ((l (- len 1 3) (- l 3))
+         (el 0 (1+ el)))
+        ((< l 0))
+      (let* ((mw (array-ref arrs l)) ; weight-layer
+             (wd (array-ref (netr-wdelta net) (- numweil el 1))))
+        (gpu-refresh-host mw)
+        (gpu-refresh-host wd)
+        (let ((mwarr (gpu-array mw))
+              (wdarr (gpu-array wd)))
+          (array-map! mwarr (lambda (a b) (+ a b)) mwarr wdarr))
+        (gpu-dirty-set! mw 1)))))
 
 ; gradient-descent, return weight update in grads
 ; historically this was backprop, therefore we update the layers in reverse

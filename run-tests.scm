@@ -76,5 +76,6 @@
                test-net-update-eligibility-traces
                test-net-update-eligibility-traces2
                test-net-rl-tderr
+               test-net-rl-tderr-waccu
                test-bio
                )))

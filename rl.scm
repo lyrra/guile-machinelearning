@@ -7,13 +7,15 @@
   (lam rl-lam set-rl-lam!)
   (net rl-net set-rl-net!)
   (Vold rl-Vold set-rl-Vold!)
-  (eligs rl-eligs set-rl-eligs!))
+  (eligs rl-eligs set-rl-eligs!)
+  (waccu rl-waccu set-rl-waccu!))
 
 (define (new-rl conf net)
   (let ((numin  (netr-numin net))
         (numout (netr-numout net))
         (numhid (netr-numhid net))
         (rl (make-rl)))
+    (set-rl-waccu! rl (get-conf conf 'waccu)) ; learning-rate
     (set-rl-alpha! rl (get-conf conf 'alpha)) ; learning-rate
     (set-rl-gam! rl (get-conf conf 'rl-gam)) ; td-gamma
     (set-rl-lam! rl (get-conf conf 'rl-lam)) ; eligibility-trace decay
@@ -27,7 +29,9 @@
   (if (not (rl-eligs rl))
     (set-rl-eligs! rl (net-grad-clone (rl-net rl))))
   ; initialize eligibily traces to 0
-  (net-grad-clear (rl-eligs rl)))
+  (net-grad-clear (rl-eligs rl))
+  ; clear weight deltas
+  (net-wdelta-clear (rl-net rl)))
 
 (define (rl-init-step rl)
   (let* ((net (rl-net rl))
@@ -76,9 +80,11 @@
     ; update network weights (Alpha * Error * Gradient)
     ; delta to update weights: w += alpha * tderr * elig
     ; where elig contains diminished gradients of network activity
-    (update-weights net alpha tderr eligs)
-    ;(if terminal-state
-    ;  (update-weights net alpha tderr eligs))
+    (if (rl-waccu rl)
+      (net-accu-wdelta net alpha tderr eligs)
+      (update-weights net alpha tderr eligs))
+    ;
+    (if (and terminal-state (rl-waccu rl)) (net-add-wdelta net))
     ; new net-output becomes old in next step
     (array-scopy! Vnew Vold)))
 
