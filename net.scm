@@ -203,10 +203,16 @@
 
 (define (net-weights-scale net proc alpha)
   (let* ((arrs (netr-arrs net))
+         (wdelta (netr-wdelta net))
          (mhw (array-ref arrs 0))
          (myw (array-ref arrs 3)))
-    (gpu-array-apply mhw (lambda (x) (proc 0 alpha x)))
-    (gpu-array-apply myw (lambda (x) (proc 1 alpha x)))))
+    (cond
+     (wdelta
+      (gpu-array-map2! mhw (lambda (w e) (proc 0 alpha w e)) mhw (array-ref wdelta 0))
+      (gpu-array-map2! myw (lambda (w e) (proc 1 alpha w e)) myw (array-ref wdelta 1)))
+     (else
+      (gpu-array-apply myw (lambda (w) (proc 1 alpha w)))
+      (gpu-array-apply myw (lambda (w) (proc 1 alpha w)))))))
 
 (define (net-accu-wdelta net alpha tderr grads)
   (let* ((arrs (netr-arrs net))
