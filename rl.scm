@@ -31,7 +31,8 @@
   ; initialize eligibily traces to 0
   (net-grad-clear (rl-eligs rl))
   ; clear weight deltas
-  (net-wdelta-clear (rl-net rl)))
+  (if (netr-wdelta (rl-net rl))
+    (net-wdelta-clear (rl-net rl))))
 
 (define (rl-init-step rl)
   (let* ((net (rl-net rl))

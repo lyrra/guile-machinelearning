@@ -69,10 +69,9 @@
       (bio--write-arrays p (netr-arrs net)))
     #:encoding #f #:binary #t))
 
-(define* (make-net #:key (init #t) in out hid)
+(define* (make-net #:key (init #t) in out hid (wdelta #f))
   (let ((netr (make-netr))
-        (net (make-array #f 7))
-        (wdelta (make-array #f 2)))
+        (net (make-array #f 7)))
     (array-set! net (gpu-make-matrix hid in)  0) ; mhw
     (array-set! net (gpu-make-vector hid)     1) ; vhz
     (array-set! net (gpu-make-vector hid)     2) ; vho
@@ -81,9 +80,11 @@
     (array-set! net (gpu-make-vector out)     5) ; vyo
     (array-set! net (gpu-make-vector in)      6) ; vxi
     ; setup weight-change cache
-    (array-set! wdelta (gpu-make-matrix hid in)  0) ; mhw
-    (array-set! wdelta (gpu-make-matrix out hid) 1) ; myw
-    (set-netr-wdelta! netr wdelta)
+    (when wdelta
+      (let ((wdeltaarr (make-array #f 2)))
+        (array-set! wdeltaarr (gpu-make-matrix hid in)  0) ; mhw
+        (array-set! wdeltaarr (gpu-make-matrix out hid) 1) ; myw
+        (set-netr-wdelta! netr wdeltaarr)))
     ;
     (set-netr-arrs!   netr net)
     (set-netr-numin!  netr  in)

@@ -333,7 +333,7 @@
   (let* ((in 2)
          (out 2)
          (hid 2)
-         (net (make-net #:in in #:out out #:hid hid #:init #t))
+         (net (make-net #:in in #:out out #:hid hid #:init #t #:wdelta #t))
          (arrs (netr-arrs net))
          (vxi (net-vxi net))
          (hw (array-ref arrs 0))
