@@ -69,6 +69,15 @@
       (bio--write-arrays p (netr-arrs net)))
     #:encoding #f #:binary #t))
 
+(define (net-make-wdelta net)
+  (let ((wdeltaarr (make-array #f 2))
+        (in  (netr-numin net))
+        (out (netr-numout net))
+        (hid (netr-numhid net)))
+    (array-set! wdeltaarr (gpu-make-matrix hid in)  0) ; mhw
+    (array-set! wdeltaarr (gpu-make-matrix out hid) 1) ; myw
+    (set-netr-wdelta! net wdeltaarr)))
+
 (define* (make-net #:key (init #t) in out hid (wdelta #f))
   (let ((netr (make-netr))
         (net (make-array #f 7)))
@@ -164,7 +173,8 @@
          (in  (gpu-rows (array-ref arrs 6)))
          (out (gpu-rows (array-ref arrs 5)))
          (hid (gpu-rows (array-ref arrs 1)))
-         (dst (make-net #:init #f #:in in #:out out #:hid hid)))
+         (dst (make-net #:init #f #:in in #:out out #:hid hid
+                        #:wdelta (if (netr-wdelta src) #t #f))))
     (do ((i 0 (+ i 1))) ((>= i 7))
       (gpu-array-map! (array-ref (netr-arrs dst) i)
                       (lambda (x) x)
