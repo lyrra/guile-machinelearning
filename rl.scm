@@ -130,11 +130,11 @@
        ; sane state
        (let ((rewarr (make-typed-array 'f32 0. numout)))
          (cond
-          ((>= reward 0)
+          ((> reward 0)
            (array-set! rewarr 1. 0)
            (if (> numout 1)
              (array-set! rewarr 0. 1)))
-          ((< reward 0)
+          ((<= reward 0)
            (array-set! rewarr 0. 0)
            (if (> numout 1)
              (array-set! rewarr 1. 1))))
