@@ -33,6 +33,7 @@
 (load "agent.scm")
 (load "backgammon.scm")
 (load "td-gammon.scm")
+(load "driver.scm")
 
 (load "t/test-common.scm") ; test driver
 ;;; tests
@@ -44,6 +45,7 @@
 (load "t/test-rocm-blas.scm") ; test gpu-abstraction with hardware
 (load "t/test-gpu-rocm-net.scm")
 (load "t/test-backgammon-moves.scm")
+(load "t/test-backgammon-td.scm")
 (load "t/test-net.scm")
 (load "t/test-bio.scm")
 
@@ -69,6 +71,8 @@
                test-backgammon-path-dual
                test-backgammon-remove-pts
                test-backgammon-bar
+               test-backgammon-td-run-out1 ; 1-neuron output
+               test-backgammon-td-run-out2 ; 2-neuron output
                test-net-load/save
                test-net-write/load-arrays
                test-net-run
