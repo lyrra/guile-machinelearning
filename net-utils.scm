@@ -33,3 +33,32 @@
 (define (normalize-networks rlw rlb)
   (if rlw (normalize-network (rl-net rlw)))
   (if rlb (normalize-network (rl-net rlb))))
+
+(define (net-get-stats net)
+  (map (lambda (drv)
+         (let ((arr (gpu-array drv))
+               (n 0)
+               (sum 0)
+               (mean 0)
+               (sum2 0)
+               (min #f)
+               (max #f))
+           (array-for-each (lambda (x)
+                             (set! n (1+ n))
+                             (set! sum (+ sum x))
+                             (if (or (not min) (< x min)) (set! min x))
+                             (if (or (not max) (> x max)) (set! max x))
+                             )
+                           arr)
+           (set! mean (/ sum n))
+           (array-for-each
+            (lambda (x)
+              (set! sum2 (+ sum2 (expt (- x mean) 2))))
+            arr)
+           (list n min max
+                 (/ sum n)
+                 (/ sum2 n)
+                 (sqrt (/ sum2 n)))))
+       (list (array-ref (netr-arrs net) 0) ; 0 hidden-layer weights
+             (array-ref (netr-arrs net) 3) ; 3 output-layer weights
+             )))
