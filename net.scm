@@ -222,7 +222,7 @@
       (gpu-array-map2! mhw (lambda (w e) (proc 0 alpha w e)) mhw (array-ref wdelta 0))
       (gpu-array-map2! myw (lambda (w e) (proc 1 alpha w e)) myw (array-ref wdelta 1)))
      (else
-      (gpu-array-apply myw (lambda (w) (proc 1 alpha w)))
+      (gpu-array-apply mhw (lambda (w) (proc 0 alpha w)))
       (gpu-array-apply myw (lambda (w) (proc 1 alpha w)))))))
 
 (define (net-accu-wdelta net alpha tderr grads)
