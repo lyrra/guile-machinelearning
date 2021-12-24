@@ -73,6 +73,7 @@
                randomize-network
                normalize-network
                net-get-stats
+               file-load-latest-net
                ; agent
                <agent>
                make-agent

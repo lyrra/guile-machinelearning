@@ -63,3 +63,21 @@
        (list (array-ref (netr-arrs net) 0) ; 0 hidden-layer weights
              (array-ref (netr-arrs net) 3) ; 3 output-layer weights
              )))
+
+(define* (file-load-latest-net dir #:optional (file-prefix "net-")
+                                              (file-suffix ".net"))
+  (let ((ds (opendir dir))
+        (name #f)
+        (episode #f))
+    (when (directory-stream? ds)
+      (do ((ent (readdir ds) (readdir ds)))
+          ((eof-object? ent))
+        (if (string-contains ent file-prefix)
+          (let* ((as (substring ent (+ (string-length file-prefix) (string-contains ent file-prefix))))
+                 (e (string->number (substring as 0 (string-contains as file-suffix)))))
+            (when (or (not episode)
+                      (> e episode))
+              (set! episode e)
+              (set! name ent)))))
+      (closedir ds))
+    (list name episode)))
