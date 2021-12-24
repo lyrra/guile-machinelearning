@@ -1,3 +1,29 @@
+(define-module (guile-ml rl)
+  #:use-module (srfi srfi-9)
+  #:use-module (ice-9 match)
+  #:use-module (guile-ml common-lisp)
+  #:use-module (guile-ml common)
+  #:use-module (guile-ml net)
+  #:use-module (guile-ml agent)
+  #:use-module (guile-gpu mat)
+  #:export (<rl>
+            make-rl
+            rl?
+            rl-alpha set-rl-alpha!
+            rl-gam set-rl-gam!
+            rl-lam set-rl-lam!
+            rl-net set-rl-net!
+            rl-Vold set-rl-Vold!
+            rl-eligs set-rl-eligs!
+            rl-waccu set-rl-waccu!
+            new-rl
+            rl-episode-clear
+            rl-init-step
+            run-tderr
+            rl-policy-greedy-action
+            run-ml-learn)
+
+  )
 
 (define-record-type <rl>
   (make-rl)
@@ -89,7 +115,7 @@
     ; new net-output becomes old in next step
     (array-scopy! Vnew Vold)))
 
-(define (rl-policy-greedy-action agent cur-state fea-states)
+(define (rl-policy-greedy-action agent cur-state fea-states transfer-state-net-fun)
   (let* ((net agent)
          (numout (netr-numout net))
          (vxi (net-vxi net)) ; lend networks-input array
@@ -97,7 +123,7 @@
          (points -999)
          (best-state #f))
     (loop-for state in fea-states do
-      (set-bg-input state vxi)
+      (transfer-state-net-fun state vxi)
       (net-run net vxi)
       (let ((out (net-vyo net)))
         ; FIX: should we consider white(idx-0) > black(idx-1) ?

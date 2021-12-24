@@ -1,8 +1,30 @@
 ; binary input/output
 ; follows/similar to erlang External Term Format
 
-(use-modules (ice-9 binary-ports))
-(use-modules (ice-9 iconv))
+(define-module (guile-ml bio)
+  #:use-module (rnrs bytevectors)
+  #:use-module (ice-9 match)
+  #:use-module (ice-9 iconv)
+  #:use-module (ice-9 binary-ports)
+  #:export (bio-read-uint32
+            bio-write-uint32
+            bio-read-float32
+            bio-read-array/matrix
+            bio-write-array/matrix
+            bio-write-f32array
+            bio-write-list
+            bio-write-string
+            bio-write-symbol
+            bio-write-emptylist
+            bio-write-nil
+            bio-write-false
+            bio-write-true
+            bio-write-int
+            bio-write-expr
+            bio-read-string
+            bio-read-list
+            bio-read-symbol
+            bio-read-expr))
 
 (define (bio-read-uint32 p)
   (+ (ash (get-u8 p) 24)

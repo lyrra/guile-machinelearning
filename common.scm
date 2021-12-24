@@ -1,5 +1,17 @@
-(use-modules (ice-9 binary-ports))
-(use-modules (rnrs bytevectors))
+(define-module (guile-ml common)
+  #:use-module (ice-9 match)
+  #:use-module (ice-9 binary-ports)
+  #:use-module (rnrs bytevectors)
+  #:export (init-rand
+            random-uniform
+            random-number
+            assert
+            get-conf
+            set-conf-default
+            make-conf
+            merge-conf
+            indent
+            command-line-parse))
 
 (define *verbose* #f)
 

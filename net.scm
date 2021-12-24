@@ -1,3 +1,46 @@
+(define-module (guile-ml net)
+  #:use-module (srfi srfi-9)
+  #:use-module (ice-9 match)
+  #:use-module (guile-ml common)
+  #:use-module (guile-ml common-lisp)
+  #:use-module (guile-ml bio)
+  #:use-module (guile-gpu gpu)
+  #:use-module (guile-gpu sigmoid)
+  #:use-module (guile-gpu mat)
+  #:use-module (ffi cblas) ; needed for guile-ffi-cblas wrapper saxpy!
+  #:export (<netr>
+            make-net
+            netr?
+            netr-info set-netr-info!
+            netr-numin set-netr-numin!
+            netr-numout set-netr-numout!
+            netr-numhid set-netr-numhid!
+            netr-in   set-netr-in!
+            netr-out  set-netr-out!
+            netr-hid  set-netr-hid!
+            netr-act  set-netr-act!
+            netr-grad set-netr-grad!
+            netr-arrs set-netr-arrs!
+            netr-wdelta set-netr-wdelta!
+            net-grad-clone
+            net-grad-clear
+            net-wdelta-clear
+            net-vyo
+            net-vxi
+            update-eligibility-traces
+            net-weights-scale
+            net-make-wdelta
+            net-accu-wdelta
+            update-weights
+            net-add-wdelta
+            net-run
+            net-set-input
+            net-copy
+            net-merge!
+            net-transfer
+            file-write-net
+            file-load-net
+            ))
 
 (define-record-type <netr>
   (make-netr)

@@ -1,3 +1,7 @@
+(define-module (guile-ml common-lisp)
+  #:export (loop-for
+            )
+  )
 
 ; can't help an old CL'er
 (define-syntax loop-for
