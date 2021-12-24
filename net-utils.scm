@@ -5,7 +5,8 @@
   #:use-module (guile-ml rl)
   #:export (randomize-network
             normalize-network
-            net-get-stats))
+            net-get-stats
+            file-load-latest-net))
 
 (define (randomize-network rl conf)
   (let ((randr (get-conf conf 'randr))
