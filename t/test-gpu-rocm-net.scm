@@ -22,9 +22,9 @@
       ((mhw vhz vho myw vyz vyo vxi)
        (array-scopy! input vxi)
        (ref-sgemv! 1. mhw #f vxi 0. vhz)
-       (array-map! vho sigmoid vhz)
+       (array-map! vho ref-sigmoid vhz)
        (ref-sgemv! 1. myw #f vho 0. vyz)
-       (array-map! vyo sigmoid vyz)
+       (array-map! vyo ref-sigmoid vyz)
        #f))))
 
 (define (test-copy-net dst src)

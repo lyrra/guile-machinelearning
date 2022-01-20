@@ -40,7 +40,9 @@
             net-transfer
             file-write-net
             file-load-net
-            ))
+            ; not public, but used by tests
+            net--read-arrays
+            net--write-arrays))
 
 (define-record-type <netr>
   (make-netr)
@@ -58,7 +60,7 @@
   (arrs netr-arrs set-netr-arrs!)
   (wdelta netr-wdelta set-netr-wdelta!))
 
-(define (bio--read-arrays p)
+(define (net--read-arrays p)
   (let* ((arrlen (bio-read-uint32 p))
          (net (make-array #f arrlen)))
     (do ((n 0 (1+ n)))
@@ -67,7 +69,7 @@
         (array-set! net arr n)))
     net))
 
-(define (bio--write-arrays p arrs)
+(define (net--write-arrays p arrs)
   (bio-write-uint32 p (array-length arrs))
   (array-for-each (lambda (gpu-arr)
                     (gpu-refresh-host gpu-arr)
@@ -81,7 +83,7 @@
         (cond
          ((= ver 1)
           (let* ((episode (bio-read-uint32 p))
-                 (net (bio--read-arrays p))
+                 (net (net--read-arrays p))
                  (net2 (net-make-from net #f)))
             (set-netr-info! net2 (list 'episode episode))
             net2))
@@ -90,7 +92,7 @@
                 (numin  (bio-read-uint32 p))
                 (numout (bio-read-uint32 p))
                 (numhid (bio-read-uint32 p)))
-            (let* ((arrs (bio--read-arrays p))
+            (let* ((arrs (net--read-arrays p))
                    (net2 (make-net #:init #f #:in numin #:out numout #:hid numhid))
                    (arrs2 (netr-arrs net2)))
               (set-netr-info! net2 (list 'episode episode))
@@ -109,7 +111,7 @@
       (bio-write-uint32 p (netr-numin  net))
       (bio-write-uint32 p (netr-numout net))
       (bio-write-uint32 p (netr-numhid net))
-      (bio--write-arrays p (netr-arrs net)))
+      (net--write-arrays p (netr-arrs net)))
     #:encoding #f #:binary #t))
 
 (define (net-make-wdelta net)
@@ -376,9 +378,9 @@
                     (z (array-ref mzarr j)))
                   (if (= el 0)
                     (if (= i j)
-                      (array-set! (gpu-array currg) (* g (sigmoid-grad z)) i j)
+                      (array-set! (gpu-array currg) (* g (ref-sigmoid-grad z)) i j)
                       (array-set! (gpu-array currg) 0. i j))
-                    (array-set! (gpu-array currg) (* g (sigmoid-grad z)) i j))))))
+                    (array-set! (gpu-array currg) (* g (ref-sigmoid-grad z)) i j))))))
           ;----------------------------------------------------------------
           ; update gradient
           (do ((e 0 (+ e 1))) ((= e ei)) ; foreach elig-mirrors

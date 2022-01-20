@@ -19,12 +19,12 @@
                                      0.0000002))))
     (call-with-output-file fname
       (lambda (p)
-        (bio--write-arrays p (netr-arrs net)))
+        (net--write-arrays p (netr-arrs net)))
       #:encoding #f #:binary #t)
 
     (call-with-input-file fname
       (lambda (p)
-        (let ((arrs (bio--read-arrays p)))
+        (let ((arrs (net--read-arrays p)))
           (test-array arrs (netr-arrs net))))
       #:guess-encoding #f
       #:encoding #f
@@ -60,11 +60,11 @@
          (n2w0 0.3) (n2w1 0.1)
          ; reference-network
          (refnet (lambda (in)
-          (sigmoid-real
-           (+ (* n2w0 (sigmoid-real (+ (* n0w0 (array-ref in 0))
-                                       (* n0w1 (array-ref in 1)))))
-              (* n2w1 (sigmoid-real (+ (* n1w0 (array-ref in 0))
-                                       (* n1w1 (array-ref in 1)))))))))
+          (ref-sigmoid-real
+           (+ (* n2w0 (ref-sigmoid-real (+ (* n0w0 (array-ref in 0))
+                                           (* n0w1 (array-ref in 1)))))
+              (* n2w1 (ref-sigmoid-real (+ (* n1w0 (array-ref in 0))
+                                           (* n1w1 (array-ref in 1)))))))))
          (compare (lambda (nin)
           (let ((ia (list-ref nin 0))
                 (ib (list-ref nin 1)))
@@ -280,7 +280,7 @@
       (test-assert-epsilon (array-ref (gpu-array hgrad1) 0 1) 0.8172280788421631 eps "hgrad1-0-1")
       (test-assert-epsilon (array-ref (gpu-array hgrad1) 1 0) 0.8125288486480713 eps "hgrad1-1-0")
       (test-assert-epsilon (array-ref (gpu-array hgrad1) 1 1) 0.8250576853752136 eps "hgrad1-1-1")
-      (test-assert-epsilon (array-ref (gpu-array ograd1)   0) 0.9250638484954834 eps "ograd1-0-0")
+      (test-assert-epsilon (array-ref (gpu-array ograd1)   0) 0.9250637888908386 eps "ograd1-0-0")
       (test-assert-epsilon (array-ref (gpu-array ograd1)   1) 0.9570125341415405 eps "ograd1-0-1"))))
 
 (define-test (test-net-rl-tderr)
