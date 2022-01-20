@@ -14,6 +14,8 @@ Machine-learning routines
    and a single hidden layer.
  
  * reinforcement learning
+
    - td(lambda)
+
    - eligibility tracing
 
