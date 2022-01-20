@@ -1,15 +1,10 @@
 
 (import (srfi srfi-1) (ice-9 match) (srfi srfi-8) (srfi srfi-9))
-(import (ffi cblas))
-(import (guile-gpu common))
 (import (guile-gpu gpu))
 (import (guile-gpu sigmoid))
-(load "common-lisp.scm")
-(load "common.scm")
-(load "bio.scm")
-(load "mat.scm")
-(load "net.scm")
-(load "net-utils.scm")
+(import (guile-ml common))
+(import (guile-ml net))
+(import (guile-ml net-utils))
 
 (let ((net-filename #f))
   (do ((args (command-line) (cdr args)))
