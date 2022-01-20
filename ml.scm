@@ -100,4 +100,5 @@
                rl-init-step
                run-tderr
                rl-policy-greedy-action
+               rl-policy-greedy-action-topn
                run-ml-learn))

@@ -21,9 +21,8 @@
             rl-init-step
             run-tderr
             rl-policy-greedy-action
-            run-ml-learn)
-
-  )
+            rl-policy-greedy-action-topn
+            run-ml-learn))
 
 (define-record-type <rl>
   (make-rl)
@@ -144,6 +143,57 @@
           best-state)
         ; got terminal-state
         #f)))
+
+; like rl-policy-greedy-action but
+; returns the nth-best action at position topn
+(define (rl-policy-greedy-action-topn agent cur-state fea-states transfer-state-net-fun topn)
+  ;(format #t "rl-policy-greedy-action-topn, select topn=~s~%" topn)
+  (let* ((net agent)
+         (numout (netr-numout net))
+         (vxi (net-vxi net)) ; lend networks-input array
+         (bvxi (make-typed-array 'f32 *unspecified* (array-length vxi)))
+         (bests (make-array #f topn)) ; vector of best-state
+         (bestp (make-array #f topn))) ; vector of best-score
+    (loop-for state in fea-states do
+      (transfer-state-net-fun state vxi)
+      (net-run net vxi)
+      (let* ((out (net-vyo net))
+             (score (if (> numout 1)
+                        (- (array-ref out 0) (array-ref out 1))
+                        (array-ref out 0)))
+             (pushs #f)
+             (pushp #f))
+          (cond
+           ; no state at this slot
+           ((not (array-ref bests 0))
+            (array-set! bests state 0)
+            (array-set! bestp score 0))
+           ; state is better than state in this slot
+           ((> score (array-ref bestp 0))
+            (set! pushs (array-ref bests 0))
+            (set! pushp (array-ref bestp 0))
+            (array-set! bests state 0)
+            (array-set! bestp score 0)))
+          (if pushs ; found a better state, rotate old states
+            (do ((i 0 (1+ i)))
+                ((>= i topn))
+              (if (> i 0)
+                (let ((os (array-ref bests i))
+                      (op (array-ref bestp i)))
+                  (array-set! bests pushs i)
+                  (array-set! bestp pushp i)
+                  (set! pushs os)
+                  (set! pushp op)))))))
+    (cond
+     ((array-ref bests 0)
+      (let ((state (array-ref bests 0)))
+        (transfer-state-net-fun state bvxi)
+        (net-set-input net bvxi)
+        ; FIX: responsibility to restore networks transitories
+        ;(net-run net vxi)
+        state))
+     (else ; terminal-state
+      #f))))
 
 (define (run-ml-learn bg rl reward)
   (let* ((net (rl-net rl))
