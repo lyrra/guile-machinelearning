@@ -1,8 +1,8 @@
-(define-module (guile-ml net-utils)
+(define-module (guile-machinelearning net-utils)
   #:use-module (guile-gpu gpu)
-  #:use-module (guile-ml common)
-  #:use-module (guile-ml net)
-  #:use-module (guile-ml rl)
+  #:use-module (guile-machinelearning common)
+  #:use-module (guile-machinelearning net)
+  #:use-module (guile-machinelearning rl)
   #:export (randomize-network
             normalize-network
             net-get-stats

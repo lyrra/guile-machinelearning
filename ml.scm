@@ -1,10 +1,10 @@
-(define-module (guile-ml ml)
-  #:use-module (guile-ml bio)
-  #:use-module (guile-ml common)
-  #:use-module (guile-ml net)
-  #:use-module (guile-ml net-utils)
-  #:use-module (guile-ml rl)
-  #:use-module (guile-ml agent)
+(define-module (guile-machinelearning ml)
+  #:use-module (guile-machinelearning bio)
+  #:use-module (guile-machinelearning common)
+  #:use-module (guile-machinelearning net)
+  #:use-module (guile-machinelearning net-utils)
+  #:use-module (guile-machinelearning rl)
+  #:use-module (guile-machinelearning agent)
   #:re-export (; bio
                bio-read-uint32
                bio-write-uint32

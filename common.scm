@@ -1,4 +1,4 @@
-(define-module (guile-ml common)
+(define-module (guile-machinelearning common)
   #:use-module (ice-9 match)
   #:use-module (ice-9 binary-ports)
   #:use-module (rnrs bytevectors)

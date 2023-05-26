@@ -4,7 +4,7 @@
 
 (import (srfi srfi-1) (ice-9 match) (srfi srfi-8) (srfi srfi-9))
 (import (guile-gpu gpu))
-(import (guile-ml t runner))
+(import (guile-machinelearning t runner))
 
 ;;; check if gpu is used
 (begin

@@ -1,4 +1,4 @@
-(define-module (guile-ml common-lisp)
+(define-module (guile-machinelearning common-lisp)
   #:export (loop-for
             )
   )

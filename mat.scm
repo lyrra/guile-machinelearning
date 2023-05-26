@@ -1,7 +1,7 @@
 
-(define-module (guile-ml mat)
+(define-module (guile-machinelearning mat)
   #:use-module (ffi blis arrays) ; from guile-ffi-cblas/mod
-  #:use-module (guile-ml common)
+  #:use-module (guile-machinelearning common)
   #:export (loop-array
             rand-v!
             rand-m!))

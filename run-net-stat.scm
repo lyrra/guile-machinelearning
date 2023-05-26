@@ -2,9 +2,9 @@
 (import (srfi srfi-1) (ice-9 match) (srfi srfi-8) (srfi srfi-9))
 (import (guile-gpu gpu))
 (import (guile-gpu sigmoid))
-(import (guile-ml common))
-(import (guile-ml net))
-(import (guile-ml net-utils))
+(import (guile-machinelearning common))
+(import (guile-machinelearning net))
+(import (guile-machinelearning net-utils))
 
 (let ((net-filename #f))
   (do ((args (command-line) (cdr args)))

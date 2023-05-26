@@ -1,7 +1,7 @@
 ; binary input/output
 ; follows/similar to erlang External Term Format
 
-(define-module (guile-ml bio)
+(define-module (guile-machinelearning bio)
   #:use-module (rnrs bytevectors)
   #:use-module (ice-9 match)
   #:use-module (ice-9 iconv)

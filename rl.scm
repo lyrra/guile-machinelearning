@@ -1,10 +1,10 @@
-(define-module (guile-ml rl)
+(define-module (guile-machinelearning rl)
   #:use-module (srfi srfi-9)
   #:use-module (ice-9 match)
-  #:use-module (guile-ml common-lisp)
-  #:use-module (guile-ml common)
-  #:use-module (guile-ml net)
-  #:use-module (guile-ml agent)
+  #:use-module (guile-machinelearning common-lisp)
+  #:use-module (guile-machinelearning common)
+  #:use-module (guile-machinelearning net)
+  #:use-module (guile-machinelearning agent)
   #:use-module (guile-gpu mat)
   #:export (<rl>
             make-rl

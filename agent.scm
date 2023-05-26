@@ -1,7 +1,7 @@
-(define-module (guile-ml agent)
+(define-module (guile-machinelearning agent)
   #:use-module (srfi srfi-9)
-  #:use-module (guile-ml net)
-  #:use-module (guile-ml rl)
+  #:use-module (guile-machinelearning net)
+  #:use-module (guile-machinelearning rl)
   #:use-module (guile-gpu mat)
   #:export (<agent>
             make-agent
