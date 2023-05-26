@@ -2,7 +2,8 @@
   #:use-module (srfi srfi-9)
   #:use-module (guile-machinelearning net)
   #:use-module (guile-machinelearning rl)
-  #:use-module (guile-gpu mat)
+  #:use-module (guile-machinelearning mat)
+  #:use-module (guile-gpu mat) ; for sv*
   #:export (<agent>
             make-agent
             agent?

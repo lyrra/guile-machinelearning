@@ -5,7 +5,8 @@
   #:use-module (guile-machinelearning common)
   #:use-module (guile-machinelearning net)
   #:use-module (guile-machinelearning agent)
-  #:use-module (guile-gpu mat)
+  #:use-module (guile-machinelearning mat)
+  #:use-module (guile-gpu mat) ; for sv*
   #:export (<rl>
             make-rl
             rl?

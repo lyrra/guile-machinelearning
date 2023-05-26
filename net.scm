@@ -4,9 +4,9 @@
   #:use-module (guile-machinelearning common)
   #:use-module (guile-machinelearning common-lisp)
   #:use-module (guile-machinelearning bio)
+  #:use-module (guile-machinelearning mat)
   #:use-module (guile-gpu gpu)
   #:use-module (guile-gpu sigmoid)
-  #:use-module (guile-gpu mat)
   #:use-module (ffi cblas) ; needed for guile-ffi-cblas wrapper saxpy!
   #:export (<netr>
             make-net
