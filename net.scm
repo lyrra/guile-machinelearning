@@ -395,7 +395,7 @@
           ; move gradient to next layer
           (do ((e 0 (+ e 1))) ((= e ei))
           (do ((i 0 (+ i 1))) ((= i len))
-            (saxpy! (array-ref (gpu-array currg) e i)
-                    (array-cell-ref (gpu-array mw) i)
-                    (array-cell-ref (gpu-array next2g) i))))
+            (cblas-saxpy! (array-ref (gpu-array currg) e i)
+                          (array-cell-ref (gpu-array mw) i)
+                          (array-cell-ref (gpu-array next2g) i))))
           (set! nextg next2g)))))
