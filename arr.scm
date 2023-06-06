@@ -4,8 +4,7 @@
   #:use-module (ice-9 match)
   #:use-module (common)
   #:use-module (guile-machinelearning mat)
-  #:use-module (ml activations)
-  #:use-module (ml sigmoid)
+  #:use-module (guile-machinelearning activations)
   #:export (arr-+ arr-- arr-* arr-/
             arr-+! arr--! arr-*! arr-/!
             vector-map!
