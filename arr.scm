@@ -16,11 +16,13 @@
             arr-tr
             arr-get-col
             arr-set!
+            arr-growdim
             arr-slice
             arr-select
             arr-insert
             arr-concat-cols
             arr-concat-rows
+            arr-fold-cols!
             arr-apply!
             arr-proc
             arr-zero!
@@ -34,7 +36,9 @@
        ((= (length dim) 1) ; vector
         (array-index-map! new (lambda (i) (oper a (array-ref b i)))))
        ((= (length dim) 2) ; matrix
-        (array-index-map! new (lambda (i j) (oper a (array-ref b i j))))))
+        (if (number? a)
+            (array-index-map! new (lambda (i j) (oper a (array-ref b i j))))
+            (array-index-map! new (lambda (i j) (oper (array-ref a i j) b))))))
       (cond
        ((= (length dim) 1) ; vector
         (array-index-map! new (lambda (i) (oper (array-ref a i) b))))
@@ -275,22 +279,86 @@
   (let ((new (apply make-arr (array-dimensions (car arrs)))))
     (apply array-map! new proc arrs)
     new))
-  
-(define (arr-slice src idxs)
-  (match idxs
-    (('* '* z)
-     (let* ((dim (array-dimensions src))
-            (rows (car dim)) (cols (cadr dim))
-            (new (make-arr rows cols)))
-       (do ((i 0 (+ i 1))) ((= i rows))
-         (do ((j 0 (+ j 1))) ((= j cols))
-           (array-set! new (array-ref src i j z) i j)))
-       new))
-    ((x '* '*) (array-slice src x))
-    ((x y '*) (array-slice src x y))))
 
-(define (arr-select src idxs)
-  (arr-slice src idxs))
+; insert a dimension at dimpos
+(define (arr-growdim src dimpos)
+  (let* ((dim (array-dimensions src))
+         (dims '()))
+    (do ((i 0 (1+ i))
+         (d dim (cdr d)))
+        ((null? d))
+      (if (= i dimpos)
+          (set! dims (cons 1 dims)))
+      (set! dims (cons (car d) dims)))
+    (set! dims (reverse dims))
+    (let ((new (apply make-arr dims)))
+      (match dims
+        ((x y z)
+         (do ((i 0 (1+ i))) ((>= i x))
+         (do ((j 0 (1+ j))) ((>= j y))
+         (do ((k 0 (1+ k))) ((>= k z))
+           (array-set! new
+                       (cond
+                        ((= dimpos 0) (array-ref src   j k))
+                        ((= dimpos 1) (array-ref src i   k))
+                        ((= dimpos 2) (array-ref src i j  )))
+                       i j k))))))
+      new)))
+
+(define (arr-select src idxs . args)
+  (let ((keepdim (if (null? args) #f (car args))))
+    (define (copy2d dst src r c offr offc)
+      (do ((i 0 (+ i 1))) ((= i r))
+        (do ((j 0 (+ j 1))) ((= j c))
+          (array-set! dst (array-ref src (+ offr i) (+ offc j)) i j))))
+    (match idxs
+      (('* s)
+       (match s
+         (('< y) ; select all columns below y
+          (match (array-dimensions src)
+            ((r c)
+             (let ((new (make-arr r y)))
+               (copy2d new src r y 0 0)
+               new))))
+         (('>= y) ; select all columns below y
+          (match (array-dimensions src)
+            ((r c)
+             (let ((new (make-arr r (- c y))))
+               (copy2d new src r (- c y) 0 y)
+               new))))
+         (c ; select a specific column
+          (let* ((dim (array-dimensions src))
+                 (rows (car dim))
+                 (new (if keepdim
+                          (make-arr rows 1)
+                          (make-arr rows))))
+            (if keepdim
+                (do ((i 0 (+ i 1))) ((= i rows))
+                  (array-set! new (array-ref src i c) i 0))
+                (do ((i 0 (+ i 1))) ((= i rows))
+                  (array-set! new (array-ref src i c) i)))
+            new))))
+      (('* '* z)
+       (let* ((dim (array-dimensions src))
+              (rows (car dim)) (cols (cadr dim))
+              (new (make-arr rows cols)))
+         (do ((i 0 (+ i 1))) ((= i rows))
+           (do ((j 0 (+ j 1))) ((= j cols))
+             (array-set! new (array-ref src i j z) i j)))
+         new))
+      (('* z '*)
+       (let* ((dim (array-dimensions src))
+              (rows (car dim)) (cols (caddr dim))
+              (new (make-arr rows cols)))
+         (do ((i 0 (+ i 1))) ((= i rows))
+           (do ((j 0 (+ j 1))) ((= j cols))
+             (array-set! new (array-ref src i z j) i j)))
+         new))
+      ((x '* '*) (array-slice src x))
+      ((x y '*) (array-slice src x y)))))
+
+(define (arr-slice src idxs)
+  (arr-select src idxs))
 
 (define (arr-insert dst src idxs)
   (match idxs
@@ -351,6 +419,13 @@
                      (set! curcol (+ curcol c)))))
                 arrs)
       new)))
+
+(define (arr-fold-cols! a b)
+  (match (array-dimensions b)
+    ((r c)
+     (do ((i 0 (1+ i))) ((>= i r))
+       (do ((j 0 (1+ j))) ((>= j c))
+         (array-set! a (+ (array-ref a i 0) (array-ref b i j)) i 0))))))
 
 (define (arr-zero! arr)
   (array-fill! arr 0.0)

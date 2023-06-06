@@ -3,7 +3,7 @@
   #:use-module (ice-9 binary-ports)
   #:use-module (rnrs bytevectors)
   #:export (init-rand
-            random-uniform
+            random-uniform random-normal
             random-number
             assert
             LLL
@@ -23,8 +23,8 @@
         (seed->random-state (or seed (current-time))))
   #f)
 
-(define (random-uniform)
-  (random:uniform *randstate*))
+(define (random-uniform) (random:uniform *randstate*))
+(define (random-normal) (random:normal *randstate*))
 
 (define (random-number len)
   (random len *randstate*))
