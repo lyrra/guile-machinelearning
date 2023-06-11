@@ -97,20 +97,20 @@
                 (dba (new-arr (list n_a 1)))
                 (da0 (new-arr (list n_a m)))
                 (dby (new-arr (list n_y 1)))
-                (da_prevt (new-arr (list n_a m)))
-                (dyt (new-arr (list n_y 1))))
-            ; loop through all time steps, T_x: 4 n_a: 5 n_x: 3 m: 10
+                (da_prevt (new-arr (list n_a m))))
+            ; loop through all time steps, T_x
             (let ((d (make-arr n_a m)))
             (do ((t (1- T_x) (1- t))) ((< t 0))
-              ; propagate through softmax
-              (let ((idx (inexact->exact (array-ref Y t))))
-                (do ((i 0 (1+ i))) ((>= i n_y))
-                  (array-set! dyt (array-ref yh i 0 t) i 0))
-                (array-set! dyt (- (array-ref dyt idx 0) 1) idx 0))
-              (let ((cache (list-ref caches-last t)))
-                (arr-+! dWya
-                        (arr-dot dyt (arr-tr (car cache)))))
-              (arr-+! dby dyt)
+              (do ((n 0 (1+ n))) ((>= n 1))
+                ; propagate through softmax
+                (let ((dyt (new-arr (list n_y 1)))
+                      (idx (inexact->exact (array-ref Y t n)))
+                      (a_next (car (list-ref caches-last t))))
+                  (do ((i 0 (1+ i))) ((>= i n_y))
+                    (array-set! dyt (array-ref yh i 0 t) i 0))
+                  (array-set! dyt (- (array-ref dyt idx 0) 1) idx 0)
+                  (arr-+! dWya (arr-dot dyt (arr-tr (arr-select a_next `(* ,n) #t))))
+                  (arr-+! dby dyt)))
               (array-fill! d 0)
               (arr-+! d (arr-select da `(* * ,t)))
               (arr-+! d da_prevt)

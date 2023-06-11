@@ -41,16 +41,20 @@
 
 ; yh array of outputs from softmax, where softmax outputs a N,1 array
 ; Y the correct index for each softmax array
-(define (softmax-loss yh Y . args)
-  (let ((selfun (if (null? args) #f (car args))))
-    (let ((sum 0)
-          (r (car (array-dimensions Y))))
-      (if selfun
-          (do ((i 0 (1+ i))) ((>= i r))
-            (set! sum (- sum (log (selfun i (inexact->exact (array-ref Y i)))))))
-          (do ((i 0 (1+ i))) ((>= i r))
-            (set! sum (- sum (log (array-ref yh i (inexact->exact (array-ref Y i)) 0))))))
-      sum)))
+; dim Y: i;th output, learning example
+(define (softmax-loss yh Y yhi yhj Yi Yj)
+  (let ((sum 0)
+        (r (car (array-dimensions Y))))
+    (match (list yhi yhj Yi Yj)
+      ((2 0 0 1)
+       (do ((i 0 (1+ i))) ((>= i r))
+         (set! sum (- sum
+                      (log (array-ref yh (inexact->exact (array-ref Y i 0)) 0 i))))))
+      ((0 1 0 1)
+       (do ((i 0 (1+ i))) ((>= i r))
+         (set! sum (- sum
+                      (log (array-ref yh i (inexact->exact (array-ref Y i 0)) 0)))))))
+    sum))
 
 ;;;; sigmoid
 
