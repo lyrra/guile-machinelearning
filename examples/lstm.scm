@@ -25,13 +25,13 @@
             (cct (arr-tanh (arr-+ (arr-dot Wc concat) bc)))
             (c_next (arr-+ (arr-* c_prev ft) (arr-* cct it)))
             (a_next (arr-* ot (arr-tanh c_next)))
-            (yt_pred (softmax (arr-+ (arr-dot Wy a_next) by))))
+            (yt_pred (if Wy (softmax (arr-+ (arr-dot Wy a_next) by)) #f)))
        (list a_next c_next yt_pred
              (list a_next c_next a_prev c_prev ft it cct ot xt))))))
 
 (define (lstm-forward x a0 Wf bf Wi bi Wo bo Wc bc Wy by)
   (match (list (array-dimensions x)
-               (array-dimensions Wy))
+               (if Wy (array-dimensions Wy) (list #f #f)))
     (((n_x m T_x) (n_y n_a))
      (let (; Create a 3D shape (n_a, m, T_x) of zeros, that holds the hidden state.
            (a (arr-zero! (new-arr (list n_a m T_x))))
